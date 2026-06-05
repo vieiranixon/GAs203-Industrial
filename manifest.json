@@ -15,6 +15,7 @@
   "prefer_related_applications": false,
   "related_applications": [],
   "iarc_rating_id": "",
+  "scope_extensions": [],
   "icons": [
     {
       "src": "favicon-16x16.png",
@@ -50,14 +51,14 @@
   "screenshots": [
     {
       "src": "screenshot-desktop.png",
-      "sizes": "1892x965",
+      "sizes": "1280x800",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Dashboard principal – visão desktop"
     },
     {
       "src": "screenshot-mobile.png",
-      "sizes": "424x807",
+      "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Dashboard principal – visão mobile"
@@ -72,12 +73,5 @@
       "url": "./index.html",
       "icons": [{ "src": "android-chrome-192x192.png", "sizes": "192x192" }]
     }
-  ],
-  "protocol_handlers": [],
-  "file_handlers": [],
-  "share_target": {
-    "action": "./index.html",
-    "method": "GET",
-    "params": { "title": "title", "text": "text", "url": "url" }
-  }
+  ]
 }
