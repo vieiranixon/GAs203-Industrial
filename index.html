@@ -11,26 +11,35 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+<!-- xlsx loaded on demand when user clicks Import -->
+<script>
+  function loadXLSX(callback) {
+    if (window.XLSX) { callback(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = callback;
+    document.head.appendChild(s);
+  }
+</script>
 <style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
   :root {
     --bg: #f5f1eb;
     --surface: #ffffff;
     --surface2: #faf7f2;
-    --caramel: #c47f2a;
-    --caramel-light: #e8a84a;
+    --caramel: #9a5a0a;
+    --caramel-light: #c47f2a;
     --brown: #6b3e1f;
-    --olive: #7a8c5a;
+    --olive: #5c6e3e;
     --olive-light: #a3b878;
-    --orange: #e07a3a;
-    --purple: #9b7db5;
+    --orange: #ac4d12;
+    --purple: #6e4f96;
     --purple-light: #c4aad9;
     --red-alert: #c0392b;
     --text: #2a1f14;
     --text2: #6b5c4a;
-    --text3: #a08c78;
+    --text3: #7d6654;
     --border: #e2d9cf;
     --shadow: 0 4px 24px rgba(107,62,31,0.08);
     --shadow-hover: 0 8px 32px rgba(107,62,31,0.15);
@@ -528,10 +537,38 @@
     .import-btn { padding: 5px 8px; font-size: 10px; }
   }
 
-  </style>
+  
+  /* ── Acessibilidade ─────────────────────────────────── */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--brown);
+    color: white;
+    padding: 8px 16px;
+    z-index: 9999;
+    font-size: 14px;
+    text-decoration: none;
+    border-radius: 0 0 4px 0;
+  }
+  .skip-link:focus { top: 0; }
+
+</style>
 </head>
 <body>
 
+<a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
 <div class="header">
   <div class="header-top-row">
     <div class="header-logos">
@@ -553,10 +590,10 @@
   </div>
 </div>
 
-<div class="main">
+<main id="main-content" class="main">
   <div class="import-notice" id="import-notice">
     ✅ Nova base importada com sucesso! Dashboard atualizado automaticamente.
-  </div>
+  </main>
 
   <!-- FILTERS -->
   <div class="filters">
@@ -570,7 +607,7 @@
     <button class="filter-btn" onclick="filterEquip('GA-203F', this)">GA-203F</button>
     <button class="filter-btn" onclick="filterEquip('GAT-203G', this)">GAT-203G</button>
     <button class="filter-btn" onclick="filterEquip('GA-203S', this)">GA-203S</button>
-  </div>
+  </h2>
 
   <!-- KPI CARDS -->
   <div class="kpi-grid" id="kpi-grid">
@@ -626,11 +663,12 @@
   </div>
 
   <!-- CHARTS ROW 1 -->
-  <div class="section-title">Temperaturas ao Longo do Tempo</div>
+  <h2 class="section-title">Temperaturas ao Longo do Tempo</h2>
   <div class="charts-row" style="margin-bottom:28px;">
     <div class="chart-card">
-      <div class="chart-title">Temperatura Selo LA — Evolução Temporal</div>
+      <h3 class="chart-title">Temperatura Selo LA — Evolução Temporal</h3>
       <div class="chart-sub">Leitura por equipamento em operação</div>
+      <label for="eq-select-line-la" class="sr-only">Selecionar equipamento – Selo LA</label>
       <select id="eq-select-line-la" onchange="updateLineChartLA()">
         <option value="GA-203A">GA-203A</option>
         <option value="GAT-203B">GAT-203B</option>
@@ -644,8 +682,9 @@
       <canvas id="lineChartLA" height="200"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title">Temperatura Selo LOA — Evolução Temporal</div>
+      <h3 class="chart-title">Temperatura Selo LOA — Evolução Temporal</h3>
       <div class="chart-sub">Leitura por equipamento em operação</div>
+      <label for="eq-select-line" class="sr-only">Selecionar equipamento – Selo LOA</label>
       <select id="eq-select-line" onchange="updateLineChart()">
         <option value="GA-203A">GA-203A</option>
         <option value="GAT-203B">GAT-203B</option>
@@ -663,29 +702,29 @@
   <!-- CHARTS ROW 2 -->
   <div class="charts-row-3">
     <div class="chart-card">
-      <div class="chart-title">Temp. Selo LA vs LOA por Equipamento</div>
+      <h3 class="chart-title">Temp. Selo LA vs LOA por Equipamento</h3>
       <div class="chart-sub">Comparativo médias por equipamento</div>
       <canvas id="barMaxTemp" height="220"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title">Pressão Sucção vs Descarga</div>
+      <h3 class="chart-title">Pressão Sucção vs Descarga</h3>
       <div class="chart-sub">Comparativo médias kgf/cm² por equipamento</div>
       <canvas id="barPressao" height="220"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title">Temp. Mancal LA vs LOA</div>
+      <h3 class="chart-title">Temp. Mancal LA vs LOA</h3>
       <div class="chart-sub">Comparativo médias por equipamento</div>
       <canvas id="barMancal" height="220"></canvas>
     </div>
   </div>
 
   <!-- EQUIPMENT CARDS -->
-  <div class="section-title">Status Individual dos Equipamentos</div>
+  <h2 class="section-title">Status Individual dos Equipamentos</h2>
   <div class="status-grid" id="status-grid"></div>
 
   <!-- INSIGHTS -->
-  <div class="section-title">Insights Automáticos</div>
-  <div class="insights-grid" id="insights-grid"></div>
+  <h2 class="section-title">Insights Automáticos</h2>
+  <div class="insights-grid" id="insights-grid"></h2>
 </div>
 
 <script>
@@ -1065,7 +1104,7 @@ function renderInsights(filter) {
   ig.innerHTML = insights.map(i => `
     <div class="insight-card fade-in">
       <div class="insight-icon ${i.cls}">${i.icon}</div>
-      <div class="insight-text"><h4>${i.title}</h4><p>${i.text}</p></div>
+      <div class="insight-text"><h3>${i.title}</h3><p>${i.text}</p></div>
     </div>`).join('');
 }
 
@@ -1128,6 +1167,7 @@ function handleFileImport(event) {
     };
     reader.readAsText(file);
   } else {
+    loadXLSX(() => {
     const reader = new FileReader();
     reader.onload = e => {
       try {
@@ -1159,6 +1199,7 @@ function handleFileImport(event) {
       } catch(err) { alert('Erro ao processar arquivo: ' + err.message); }
     };
     reader.readAsBinaryString(file);
+    }); // loadXLSX
   }
   event.target.value = '';
 }
@@ -1217,5 +1258,6 @@ window.addEventListener('DOMContentLoaded', () => {
     navigator.serviceWorker.register('./sw.js');
   }
 </script>
+</main>
 </body>
 </html>
