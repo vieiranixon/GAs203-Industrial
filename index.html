@@ -1204,7 +1204,7 @@
     <div class="header-title-row">
       <span class="logo-label">Sistema de Monitoramento</span>
       <h1>Confiabilidade dos Equipamentos GAs-203</h1>
-      <p id="header-period">Período: Jan – Mai 2026 · 8 equipamentos monitorados</p>
+      <p id="header-period">Período: Jan – Jun 2026 · 8 equipamentos monitorados</p>
     </div>
     <div class="header-right">
       <span class="header-badge" id="last-update">Última atualização</span>
@@ -2041,6 +2041,22 @@ function handleFileImport(event) {
   event.target.value = '';
 }
 
+function updateHeaderPeriod() {
+  const nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const eqs = Object.keys(DATA);
+  const months = new Set();
+  eqs.forEach(eq => DATA[eq].forEach(d => { if (d.data) months.add(d.data.slice(0,7)); }));
+  const sorted = [...months].sort();
+  if (!sorted.length) return;
+  const [y0, m0] = sorted[0].split('-');
+  const [y1, m1] = sorted[sorted.length-1].split('-');
+  const label0 = nomes[+m0-1] + (y0 !== y1 ? '/'+y0 : '');
+  const label1 = nomes[+m1-1] + '/'+y1;
+  const period = label0 === label1 ? label1 : label0 + ' – ' + label1;
+  const el = document.getElementById('header-period');
+  if (el) el.textContent = 'Período: ' + period + ' · ' + eqs.length + ' equipamentos monitorados';
+}
+
 function refreshAll() {
   activeFilter = 'all';
   document.querySelectorAll('.filter-btn').forEach((b,i) => b.classList.toggle('active', i===0));
@@ -2080,6 +2096,7 @@ function refreshAll() {
   // Rebuild dynamic selects with new data
   _buildDynamicSelects();
   updateComparativo();
+  updateHeaderPeriod();
   const n = document.getElementById('import-notice');
   n.style.display = 'flex';
   setTimeout(() => n.style.display = 'none', 5000);
@@ -2121,6 +2138,7 @@ window.addEventListener('DOMContentLoaded', () => {
   updateLogBadge();
   _buildDynamicSelects();
   try { updateComparativo(); } catch(e) {}
+  updateHeaderPeriod();
 });
 
 function _buildDynamicSelects() {
