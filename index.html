@@ -1340,19 +1340,8 @@
     ✅ Nova base importada com sucesso! Dashboard atualizado automaticamente.
   </div>
 
-  <!-- FILTERS -->
-  <div class="filters">
-    <span class="filter-label">Equipamento:</span>
-    <button class="filter-btn active" onclick="filterEquip('all', this)">Todos</button>
-    <button class="filter-btn" onclick="filterEquip('GA-203A', this)">GA-203A</button>
-    <button class="filter-btn" onclick="filterEquip('GAT-203B', this)">GAT-203B</button>
-    <button class="filter-btn" onclick="filterEquip('GAT-203C', this)">GAT-203C</button>
-    <button class="filter-btn" onclick="filterEquip('GA-203D', this)">GA-203D</button>
-    <button class="filter-btn" onclick="filterEquip('GA-203E', this)">GA-203E</button>
-    <button class="filter-btn" onclick="filterEquip('GA-203F', this)">GA-203F</button>
-    <button class="filter-btn" onclick="filterEquip('GAT-203G', this)">GAT-203G</button>
-    <button class="filter-btn" onclick="filterEquip('GA-203S', this)">GA-203S</button>
-  </div>
+  <!-- FILTERS — populado dinamicamente pelo JS -->
+  <div class="filters" id="filter-container"></div>
 
   <!-- KPI CARDS -->
   <div class="kpi-grid" id="kpi-grid">
@@ -1953,6 +1942,7 @@ function handleFileImport(event) {
           estado: 'operação'
         });
       });
+      _dataJustImported = true;
       DATA = parsed;
       refreshAll();
     };
@@ -1961,32 +1951,82 @@ function handleFileImport(event) {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+        // Parse with raw:true + cellDates:true → dates come as JS Date objects
+        const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true, cellNF: false, cellText: false });
+        // Find the main data sheet (first sheet or the one with equipment data)
+        let wsName = wb.SheetNames[0];
+        for (const name of wb.SheetNames) {
+          const s = wb.Sheets[name];
+          const ref = s['!ref'];
+          if (ref && XLSX.utils.decode_range(ref).e.r > 5) { wsName = name; break; }
+        }
+        const ws = wb.Sheets[wsName];
+        if (!ws) { alert('Não foi possível ler a planilha.'); return; }
+        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true }) || [];
         const newData = {};
         let curEq = null, curData = [];
+
+        const sf = v => {
+          if (v === null || v === undefined || v === '-' || v === '') return null;
+          const f = parseFloat(v);
+          return isNaN(f) || f <= 0 ? null : f;
+        };
+
+        const fmtDate = (v) => {
+          if (!v) return null;
+          // JS Date object (from cellDates:true)
+          if (v instanceof Date && !isNaN(v)) {
+            return v.toISOString().slice(0, 10);
+          }
+          // Excel serial number fallback
+          if (typeof v === 'number' && v > 40000 && v < 60000) {
+            const d = new Date(Date.UTC(1899, 11, 30) + v * 86400000);
+            return d.toISOString().slice(0, 10);
+          }
+          return null;
+        };
+
         raw.forEach(row => {
-          if (row[0] && typeof row[0] === 'string' && row[0].startsWith('G')) {
+          if (!row || row.length === 0) return;
+          const cell0 = row[0];
+          // Equipment header row: string starting with G (GA-203A, GAT-203B, etc.)
+          if (cell0 && typeof cell0 === 'string' && /^GA[T]?-203/.test(cell0.trim())) {
             if (curEq && curData.length) newData[curEq] = curData;
-            curEq = row[0]; curData = [];
-          } else if (curEq && row[0] instanceof Date) {
-            const sf = v => { try { const f = parseFloat(v); return isNaN(f) || f <= 0 ? null : f; } catch { return null; } };
-            const status = row[13] ? String(row[13]).toLowerCase() : '';
-            const estado = status.includes('stand') || status.includes('aquec') ? 'stand-by' : status.includes('manu') ? 'manutenção' : 'operação';
-            curData.push({
-              data: row[0].toISOString().slice(0,10),
-              pressao_succao: sf(row[1]), pressao_descarga: sf(row[2]),
-              pressao_pote_la: sf(row[7]), pressao_pote_loa: sf(row[8]),
-              temp_selo_la: sf(row[9]), temp_selo_loa: sf(row[10]),
-              temp_mancal_la: sf(row[11]), temp_mancal_loa: sf(row[12]),
-              estado
-            });
+            curEq = cell0.trim();
+            curData = [];
+          } else if (curEq && cell0) {
+            const dateStr = fmtDate(cell0);
+            if (dateStr) {
+              const status = String(row[13] || '').toLowerCase();
+              const estado = (status.includes('stand') || status.includes('stb'))
+                ? 'stand-by'
+                : (status.includes('manu') || status.includes('mnt'))
+                ? 'manutenção'
+                : 'operação';
+              curData.push({
+                data: dateStr,
+                pressao_succao:  sf(row[1]),
+                pressao_descarga: sf(row[2]),
+                pressao_pote_la:  sf(row[7]),
+                pressao_pote_loa: sf(row[8]),
+                temp_selo_la:     sf(row[9]),
+                temp_selo_loa:    sf(row[10]),
+                temp_mancal_la:   sf(row[11]),
+                temp_mancal_loa:  sf(row[12]),
+                estado
+              });
+            }
           }
         });
         if (curEq && curData.length) newData[curEq] = curData;
-        if (Object.keys(newData).length > 0) { DATA = newData; refreshAll(); }
-        else alert('Não foi possível identificar dados válidos no arquivo.');
+        const totalRows = Object.values(newData).reduce((s, r) => s + r.length, 0);
+        if (Object.keys(newData).length > 0 && totalRows > 0) {
+          _dataJustImported = true;
+          DATA = newData;
+          refreshAll();
+        } else {
+          alert('Nenhum dado reconhecido. Verifique se a planilha está no formato correto (GA-203A, datas na coluna A).');
+        }
       } catch(err) { alert('Erro ao processar arquivo: ' + err.message); }
     };
     reader.readAsBinaryString(file);
@@ -1999,22 +2039,22 @@ function refreshAll() {
   document.querySelectorAll('.filter-btn').forEach((b,i) => b.classList.toggle('active', i===0));
 
   // Update filter buttons
-  const filterContainer = document.querySelector('.filters');
-  if (!filterContainer) return;
-  filterContainer.innerHTML = '<span class="filter-label">Equipamento:</span>';
-  const allBtn = document.createElement('button');
-  allBtn.className = 'filter-btn active';
-  allBtn.textContent = 'Todos';
-  allBtn.onclick = function() { filterEquip('all', this); };
-  filterContainer.appendChild(allBtn);
-  Object.keys(DATA).forEach(eq => {
-    const b = document.createElement('button');
-    b.className = 'filter-btn';
-    b.textContent = eq;
-    b.onclick = function() { filterEquip(eq, this); };
-    filterContainer.appendChild(b);
-  });
-
+  const filterContainer = document.getElementById('filter-container');
+  if (filterContainer) {
+    filterContainer.innerHTML = '<span class="filter-label">Equipamento:</span>';
+    const allBtn = document.createElement('button');
+    allBtn.className = 'filter-btn active';
+    allBtn.textContent = 'Todos';
+    allBtn.onclick = function() { filterEquip('all', this); };
+    filterContainer.appendChild(allBtn);
+    Object.keys(DATA).forEach(eq => {
+      const b = document.createElement('button');
+      b.className = 'filter-btn';
+      b.textContent = eq;
+      b.onclick = function() { filterEquip(eq, this); };
+      filterContainer.appendChild(b);
+    });
+  }
   const sel = document.getElementById('eq-select-line');
   const selLA = document.getElementById('eq-select-line-la');
   if (sel) sel.innerHTML = Object.keys(DATA).map(eq => `<option value="${eq}">${eq}</option>`).join('');
@@ -2099,6 +2139,17 @@ function showPage(name) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('visible');
   document.getElementById('tab-' + name).classList.add('active');
+  // Re-render charts and data when switching to dashboard (fixes hidden canvas issue)
+  if (name === 'dashboard') {
+    calcKPIs(activeFilter || 'all');
+    updateLineChartLA();
+    updateLineChart();
+    updateBarCharts(activeFilter || 'all');
+    renderEquipCards(activeFilter || 'all');
+    renderInsights(activeFilter || 'all');
+    _buildDynamicSelects();
+    updateComparativo();
+  }
 }
 
 // ---------- THRESHOLDS ----------
@@ -2442,16 +2493,28 @@ async function carregarDadosIDB() {
   } catch { return null; }
 }
 
+// Flag para evitar que IDB sobrescreva dados recém-importados
+let _dataJustImported = false;
+
 // Inicializar IDB e tentar carregar dados salvos
 (async () => {
   try {
     await openIDB();
     const saved = await carregarDadosIDB();
-    if (saved && Object.keys(saved).length > 0) {
+    if (saved && Object.keys(saved).length > 0 && !_dataJustImported) {
       DATA = saved;
       // Re-render everything with saved data
       const el = document.getElementById('idb-status');
       if (el) el.innerHTML = '<span class="idb-badge">✓ Dados offline carregados</span>';
+      renderSemaforo();
+      calcKPIs('all');
+      updateLineChartLA();
+      updateLineChart();
+      updateBarCharts('all');
+      renderEquipCards('all');
+      renderInsights('all');
+      _buildDynamicSelects();
+      updateComparativo();
     }
   } catch (e) { console.warn('IDB init:', e); }
 })();
