@@ -2627,6 +2627,9 @@ function renderSemaforo() {
     const icone = cls === 'verde' ? '✅' : cls === 'amarelo' ? '⚠️' : cls === 'cinza' ? '⏸' : '🔴';
     const statusLabel = cls === 'verde' ? 'Normal' : cls === 'amarelo' ? 'Atenção' : cls === 'cinza' ? 'Stand-by / Sem dados' : 'CRÍTICO';
 
+    const estadoLabel = estado === 'operação' ? '⚙️ Operação' : estado === 'manutenção' ? '🔧 Manutenção' : '⏸ Stand-by';
+    const estadoCor   = estado === 'operação' ? '#27ae60' : estado === 'manutenção' ? '#f39c12' : '#888';
+
     const loaVal  = last ? last.temp_selo_loa    : null;
     const laVal   = last ? last.temp_selo_la     : null;
     const poteLA  = last ? last.pressao_pote_la  : null;
@@ -2636,13 +2639,16 @@ function renderSemaforo() {
     const poteLAColor  = poteLA  != null ? (poteLA  <= THRESHOLDS.pote_la_crit  ? '#c0392b' : poteLA  <= THRESHOLDS.pote_la_warn  ? '#e07a3a' : '#27ae60') : '#a08c78';
     const poteLOAColor = poteLOA != null ? (poteLOA <= THRESHOLDS.pote_loa_crit ? '#c0392b' : poteLOA <= THRESHOLDS.pote_loa_warn ? '#e07a3a' : '#27ae60') : '#a08c78';
 
+    const fmtDate = (iso) => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
+
     const tempsHtml = last ? `
       <div class="semaforo-temps">
-        Selo LOA: <strong style="color:${loaColor}">${loaVal ?? '—'}°C</strong><br>
+        <span style="font-size:10px;font-weight:700;color:${estadoCor};letter-spacing:.05em;text-transform:uppercase">${estadoLabel}</span><br>
         Selo LA: <strong style="color:${laColor}">${laVal ?? '—'}°C</strong><br>
+        Selo LOA: <strong style="color:${loaColor}">${loaVal ?? '—'}°C</strong><br>
         Pote LA: <strong style="color:${poteLAColor}">${poteLA ?? '—'} kgf</strong>
         · LOA: <strong style="color:${poteLOAColor}">${poteLOA ?? '—'} kgf</strong><br>
-        Última: ${last.data.slice(5)}
+        Última: ${fmtDate(last.data)}
       </div>` : '<div class="semaforo-temps" style="color:var(--text3)">Sem leitura recente</div>';
 
     const primeiroMotivo = motivos[0] || '';
