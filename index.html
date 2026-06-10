@@ -1075,13 +1075,15 @@
     body * { visibility: hidden; }
     #print-area, #print-area * { visibility: visible; }
     #print-area {
-      position: fixed;
+      position: absolute;
       left: 0; top: 0;
       width: 100%;
       font-family: 'DM Sans', sans-serif;
       color: #2a1f14;
       padding: 24px 32px;
+      box-sizing: border-box;
     }
+    #tv-overlay { display: none !important; }
     .print-title {
       font-size: 22px;
       font-weight: 700;
@@ -3121,7 +3123,7 @@ function gerarPDF() {
     : '<div style="font-size:11px;color:#a08c78;padding:8px">Nenhuma observação registrada.</div>';
 
   // ── Monta relatório ──
-  printArea.style.display = 'block';
+  printArea.style.cssText = 'display:block; position:absolute; left:0; top:0; width:100%; z-index:99999; background:#fff;';
   printArea.innerHTML = `
     <div style="font-family:'DM Sans',Arial,sans-serif;max-width:900px;margin:0 auto;padding:24px;color:#2c2c2c">
 
@@ -3173,7 +3175,7 @@ function gerarPDF() {
 
   setTimeout(() => {
     window.print();
-    setTimeout(() => { printArea.style.display = 'none'; }, 1000);
+    setTimeout(() => { printArea.style.cssText = 'display:none;'; printArea.innerHTML = ''; }, 1000);
   }, 100);
 }
 
