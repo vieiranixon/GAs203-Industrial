@@ -2950,6 +2950,39 @@ let _dataJustImported = false;
 // A função refreshAll original já chama renderSemaforo() e calcKPIs()
 // Injetamos o save via DOMContentLoaded patch abaixo
 
+// ── SYNC VIA BROADCASTCHANNEL ─────────────────────────────────────
+(function() {
+  try {
+    const syncChannel = new BroadcastChannel('ga203_sync');
+    syncChannel.addEventListener('message', async (event) => {
+      if (event.data && event.data.type === 'new_record') {
+        const el = document.getElementById('idb-status');
+        if (el) el.innerHTML = '<span class="idb-badge" style="background:#e07a3a">⟳ Sincronizando...</span>';
+        await new Promise(r => setTimeout(r, 600));
+        try {
+          const saved = await carregarDadosIDB();
+          if (saved && Object.keys(saved).length > 0) {
+            DATA = saved;
+            renderSemaforo();
+            injectHealthScores();
+            calcKPIs(activeFilter || 'all');
+            try { updateLineChartLA(); } catch(e) {}
+            try { updateLineChart(); } catch(e) {}
+            try { updateBarCharts(activeFilter || 'all'); } catch(e) {}
+            renderEquipCards(activeFilter || 'all');
+            renderInsights(activeFilter || 'all');
+            _buildDynamicSelects();
+            try { updateComparativo(); } catch(e) {}
+            updateHeaderPeriod();
+            if (el) el.innerHTML = '<span class="idb-badge" style="background:#27ae60">✓ Atualizado</span>';
+            setTimeout(() => { if (el) el.innerHTML = ''; }, 3000);
+          }
+        } catch(e) { console.warn('Sync IDB:', e); }
+      }
+    });
+  } catch(e) { console.warn('BroadcastChannel não suportado:', e); }
+})();
+
 // Online/offline indicator
 window.addEventListener('offline', () => {
   const b = document.getElementById('offline-badge');
