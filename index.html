@@ -1285,6 +1285,7 @@
         Importar Nova Base
       </button>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileImport(event)" style="display:none">
+      <button class="tv-btn-header" onclick="atualizarManual()" id="btn-sync" title="Atualizar dados do formulário">🔄 Atualizar</button>
       <button class="tv-btn-header" onclick="startTVMode()">📺 Modo TV</button>
     </div>
   </div>
@@ -3021,6 +3022,40 @@ let _dataJustImported = false;
     });
   } catch(e) {}
 })();
+
+// ── ATUALIZAÇÃO MANUAL ────────────────────────────────────────────
+async function atualizarManual() {
+  const btn = document.getElementById('btn-sync');
+  const el = document.getElementById('idb-status');
+  if (btn) btn.textContent = '⏳ Atualizando...';
+  if (el) el.innerHTML = '<span class="idb-badge" style="background:#e07a3a">⟳ Atualizando...</span>';
+  try {
+    const saved = await carregarDadosIDB();
+    if (saved && Object.keys(saved).length > 0) {
+      DATA = saved;
+      renderSemaforo();
+      injectHealthScores();
+      calcKPIs(activeFilter || 'all');
+      try { updateLineChartLA(); } catch(e) {}
+      try { updateLineChart(); } catch(e) {}
+      try { updateBarCharts(activeFilter || 'all'); } catch(e) {}
+      renderEquipCards(activeFilter || 'all');
+      renderInsights(activeFilter || 'all');
+      _buildDynamicSelects();
+      try { updateComparativo(); } catch(e) {}
+      updateHeaderPeriod();
+      if (el) el.innerHTML = '<span class="idb-badge" style="background:#27ae60">✓ Atualizado</span>';
+      setTimeout(() => { if (el) el.innerHTML = ''; }, 3000);
+    } else {
+      if (el) el.innerHTML = '<span class="idb-badge" style="background:#e07a3a">Sem dados no IDB</span>';
+      setTimeout(() => { if (el) el.innerHTML = ''; }, 3000);
+    }
+  } catch(e) {
+    if (el) el.innerHTML = '<span class="idb-badge" style="background:#c0392b">Erro ao atualizar</span>';
+    setTimeout(() => { if (el) el.innerHTML = ''; }, 3000);
+  }
+  if (btn) btn.textContent = '🔄 Atualizar';
+}
 
 // Online/offline indicator
 window.addEventListener('offline', () => {
