@@ -2950,37 +2950,76 @@ let _dataJustImported = false;
 // A função refreshAll original já chama renderSemaforo() e calcKPIs()
 // Injetamos o save via DOMContentLoaded patch abaixo
 
-// ── SYNC VIA BROADCASTCHANNEL ─────────────────────────────────────
+// ── SYNC AUTOMÁTICO A CADA 10s ────────────────────────────────────
+// Verifica o IDB periodicamente para capturar dados novos do formulário
 (function() {
+  let _ultimoSalvo = null;
+
+  async function verificarAtualizacao() {
+    if (_dataJustImported) return; // não sobrescreve importação manual
+    try {
+      const db = _idb || await openIDB();
+      const tx = db.transaction('dados', 'readonly');
+      const store = tx.objectStore('dados');
+      const req = store.get('main');
+      req.onsuccess = () => {
+        if (!req.result) return;
+        const salvo = req.result.salvo;
+        // Se o timestamp mudou, tem dado novo
+        if (salvo && salvo !== _ultimoSalvo) {
+          _ultimoSalvo = salvo;
+          // Só atualiza se não foi este próprio dashboard que salvou agora
+          try {
+            const saved = JSON.parse(req.result.data);
+            if (saved && Object.keys(saved).length > 0) {
+              DATA = saved;
+              renderSemaforo();
+              injectHealthScores();
+              calcKPIs(activeFilter || 'all');
+              try { updateLineChartLA(); } catch(e) {}
+              try { updateLineChart(); } catch(e) {}
+              try { updateBarCharts(activeFilter || 'all'); } catch(e) {}
+              renderEquipCards(activeFilter || 'all');
+              renderInsights(activeFilter || 'all');
+              _buildDynamicSelects();
+              try { updateComparativo(); } catch(e) {}
+              updateHeaderPeriod();
+              const el = document.getElementById('idb-status');
+              if (el) {
+                el.innerHTML = '<span class="idb-badge" style="background:#27ae60">✓ Atualizado</span>';
+                setTimeout(() => { if (el) el.innerHTML = ''; }, 3000);
+              }
+            }
+          } catch(e) { console.warn('Parse IDB:', e); }
+        }
+      };
+    } catch(e) {}
+  }
+
+  // Inicializa o timestamp após carregar os dados
+  setTimeout(async () => {
+    try {
+      const db = _idb || await openIDB();
+      const tx = db.transaction('dados', 'readonly');
+      const store = tx.objectStore('dados');
+      const req = store.get('main');
+      req.onsuccess = () => { if (req.result) _ultimoSalvo = req.result.salvo; };
+    } catch(e) {}
+  }, 2000);
+
+  // Verifica a cada 10 segundos
+  setInterval(verificarAtualizacao, 10000);
+
+  // Também tenta via BroadcastChannel se disponível (mesmo domínio)
   try {
     const syncChannel = new BroadcastChannel('ga203_sync');
     syncChannel.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'new_record') {
-        const el = document.getElementById('idb-status');
-        if (el) el.innerHTML = '<span class="idb-badge" style="background:#e07a3a">⟳ Sincronizando...</span>';
-        await new Promise(r => setTimeout(r, 600));
-        try {
-          const saved = await carregarDadosIDB();
-          if (saved && Object.keys(saved).length > 0) {
-            DATA = saved;
-            renderSemaforo();
-            injectHealthScores();
-            calcKPIs(activeFilter || 'all');
-            try { updateLineChartLA(); } catch(e) {}
-            try { updateLineChart(); } catch(e) {}
-            try { updateBarCharts(activeFilter || 'all'); } catch(e) {}
-            renderEquipCards(activeFilter || 'all');
-            renderInsights(activeFilter || 'all');
-            _buildDynamicSelects();
-            try { updateComparativo(); } catch(e) {}
-            updateHeaderPeriod();
-            if (el) el.innerHTML = '<span class="idb-badge" style="background:#27ae60">✓ Atualizado</span>';
-            setTimeout(() => { if (el) el.innerHTML = ''; }, 3000);
-          }
-        } catch(e) { console.warn('Sync IDB:', e); }
+        await new Promise(r => setTimeout(r, 800));
+        verificarAtualizacao();
       }
     });
-  } catch(e) { console.warn('BroadcastChannel não suportado:', e); }
+  } catch(e) {}
 })();
 
 // Online/offline indicator
