@@ -1248,6 +1248,7 @@
   .tv-exit { position:fixed; top:14px; left:16px; background:#222; border:1px solid #444;
     color:#aaa; border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer;
     font-family:'DM Sans',sans-serif; z-index:10000; }
+  .header-logos-actions { display:flex; align-items:center; gap:10px; }
   .tv-btn-header { background:var(--brown,#6b3e1f); color:#fff; border:none; border-radius:10px;
     padding:8px 18px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:700;
     cursor:pointer; letter-spacing:.04em; display:flex; align-items:center; gap:6px; }
@@ -1278,13 +1279,15 @@
       <h1>Confiabilidade dos Equipamentos GAs-203</h1>
       <p id="header-period">Período: Jan – Jun 2026 · 8 equipamentos monitorados</p>
     </div>
-    <div class="header-right">
+    <div class="header-logos-actions">
       <span class="header-badge" id="last-update">Última atualização</span>
       <button class="import-btn" onclick="document.getElementById('fileInput').click()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Importar Nova Base
+        Importar Planilha de Dados
       </button>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileImport(event)" style="display:none">
+    </div>
+    <div class="header-right">
       <button class="tv-btn-header" onclick="atualizarManual()" id="btn-sync" title="Atualizar dados do formulário">🔄 Atualizar</button>
       <button class="tv-btn-header" onclick="startTVMode()">📺 Modo TV</button>
     </div>
@@ -2216,18 +2219,9 @@ function injectHealthScores() {
       card.appendChild(badge);
     }
     badge.textContent = '#' + (idx + 1);
-    // health bar
+    // health bar — já renderizado no card via hsHtml, apenas atualiza o badge
     var existing = card.querySelector('.health-wrap');
     if (existing) existing.remove();
-    var wrap = document.createElement('div');
-    wrap.className = 'health-wrap';
-    wrap.style.padding = '0 12px 8px';
-    wrap.innerHTML = '<div class="health-label" style="color:' + item.color + '">Health Score</div>' +
-      '<div style="display:flex;align-items:center;gap:6px">' +
-      '<div class="health-bar-wrap"><div class="health-bar" style="width:' + item.score + '%;background:' + item.color + '"></div></div>' +
-      '<span class="health-score-num" style="color:' + item.color + '">' + item.score + '</span>' +
-      '</div>';
-    card.appendChild(wrap);
   });
 }
 
@@ -3008,10 +3002,10 @@ let _dataJustImported = false;
     } catch(e) {}
   }, 2000);
 
-  // Verifica a cada 10 segundos
+  // Verifica a cada 10 segundos (funciona em todos os navegadores)
   setInterval(verificarAtualizacao, 10000);
 
-  // Também tenta via BroadcastChannel se disponível (mesmo domínio)
+  // BroadcastChannel para atualização instantânea (Chrome/Firefox/Edge)
   try {
     const syncChannel = new BroadcastChannel('ga203_sync');
     syncChannel.addEventListener('message', async (event) => {
@@ -3021,6 +3015,18 @@ let _dataJustImported = false;
       }
     });
   } catch(e) {}
+
+  // Fallback via localStorage para Safari/iOS (polling a cada 3s)
+  let _lsTs = null;
+  setInterval(() => {
+    try {
+      const ts = localStorage.getItem('ga203_sync_ts');
+      if (ts && ts !== _lsTs) {
+        _lsTs = ts;
+        setTimeout(verificarAtualizacao, 800);
+      }
+    } catch(e) {}
+  }, 3000);
 })();
 
 // ── ATUALIZAÇÃO MANUAL ────────────────────────────────────────────
