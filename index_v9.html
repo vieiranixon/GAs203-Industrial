@@ -1646,7 +1646,10 @@ function getLastState(eq) {
 function getLastDate(eq) {
   const d = DATA[eq];
   for (let i = d.length-1; i >= 0; i--) {
-    if (d[i].data) return d[i].data;
+    if (d[i].data) {
+      const [y,m,dd] = d[i].data.split('-');
+      return `${dd}/${m}/${y}`;
+    }
   }
   return '';
 }
@@ -2560,11 +2563,11 @@ function classifyEquip(eq) {
   const last = [...rows].reverse().find(d => d.temp_selo_loa || d.temp_selo_la);
   const estado = rows[rows.length - 1].estado;
 
-  if (estado === 'manutenção') return { cls: 'amarelo', nivel: 1, motivos: ['Em manutenção'], last };
+  if (estado === 'manutenção') return { cls: 'amarelo', nivel: 1, motivos: ['Em manutenção'], last, lastRow: rows[rows.length-1] };
 
   if (!last) {
-    if (estado === 'stand-by') return { cls: 'cinza', nivel: 0, motivos: ['Stand-by'], last: null };
-    return { cls: 'cinza', nivel: 0, motivos: ['Sem dados'], last: null };
+    if (estado === 'stand-by') return { cls: 'cinza', nivel: 0, motivos: ['Stand-by'], last: null, lastRow: rows[rows.length-1] };
+    return { cls: 'cinza', nivel: 0, motivos: ['Sem dados'], last: null, lastRow: rows[rows.length-1] };
   }
 
   const motivos = [];
@@ -2589,11 +2592,11 @@ function classifyEquip(eq) {
   checkLow(last.pressao_pote_la,  THRESHOLDS.pote_la_warn,  THRESHOLDS.pote_la_crit,  'Pote LA');
   checkLow(last.pressao_pote_loa, THRESHOLDS.pote_loa_warn, THRESHOLDS.pote_loa_crit, 'Pote LOA');
 
-  if (estado === 'stand-by' && nivel === 0) return { cls: 'cinza', nivel: 0, motivos: ['Stand-by'], last };
+  if (estado === 'stand-by' && nivel === 0) return { cls: 'cinza', nivel: 0, motivos: ['Stand-by'], last, lastRow: rows[rows.length-1] };
 
   const cls = nivel === 2 ? 'vermelho' : nivel === 1 ? 'amarelo' : 'verde';
   if (motivos.length === 0) motivos.push('Operação normal');
-  return { cls, nivel, motivos, last };
+  return { cls, nivel, motivos, last, lastRow: rows[rows.length-1] };
 }
 
 // ---------- RENDERIZAR SEMÁFORO ----------
@@ -2604,7 +2607,7 @@ function renderSemaforo() {
 
   // Detectar novos alertas para o log
   eqs.forEach(eq => {
-    const { cls, nivel, motivos, last } = classifyEquip(eq);
+    const { cls, nivel, motivos, last, lastRow } = classifyEquip(eq);
     if (nivel >= 1 && last) {
       const key = eq + '_' + last.data + '_' + nivel;
       addToLog(key, eq, last, nivel, motivos);
@@ -2619,7 +2622,7 @@ function renderSemaforo() {
 
   grid.innerHTML = ranked.map(({ eq, hs }, idx) => {
     const rank = idx + 1;
-    const { cls, nivel, motivos, last } = classifyEquip(eq);
+    const { cls, nivel, motivos, last, lastRow } = classifyEquip(eq);
     const estado = last ? last.estado : DATA[eq][DATA[eq].length - 1].estado;
     const icone = cls === 'verde' ? '✅' : cls === 'amarelo' ? '⚠️' : cls === 'cinza' ? '⏸' : '🔴';
     const statusLabel = cls === 'verde' ? 'Normal' : cls === 'amarelo' ? 'Atenção' : cls === 'cinza' ? 'Stand-by / Sem dados' : 'CRÍTICO';
@@ -2645,7 +2648,7 @@ function renderSemaforo() {
         Selo LOA: <strong style="color:${loaColor}">${loaVal ?? '—'}°C</strong><br>
         Pote LA: <strong style="color:${poteLAColor}">${poteLA ?? '—'} kgf</strong>
         · LOA: <strong style="color:${poteLOAColor}">${poteLOA ?? '—'} kgf</strong><br>
-        Última: ${fmtDate(last.data)}
+        Última leitura: ${fmtDate(lastRow && lastRow.data ? lastRow.data : last.data)}${lastRow && lastRow.data !== last.data ? '<br><span style="font-size:9px;color:#a08c78">Últ. temp: ' + fmtDate(last.data) + '</span>' : ''}
       </div>` : '<div class="semaforo-temps" style="color:var(--text3)">Sem leitura recente</div>';
 
     const primeiroMotivo = motivos[0] || '';
@@ -3086,7 +3089,7 @@ function gerarPDF() {
   // ── Ranking por Health Score ──
   const ranked = eqs.map(eq => {
     const hs = calcHealthScore(eq);
-    const { cls, nivel, motivos, last } = classifyEquip(eq);
+    const { cls, nivel, motivos, last, lastRow } = classifyEquip(eq);
     const estado = DATA[eq][DATA[eq].length - 1].estado;
     return { eq, hs, cls, nivel, motivos, last, estado };
   }).sort((a, b) => a.hs.score - b.hs.score);
@@ -3181,7 +3184,7 @@ function gerarPDF() {
             </td>
             <td style="padding:6px 8px;text-align:center">${last ? last.temp_selo_loa + '°C' : '—'}</td>
             <td style="padding:6px 8px;text-align:center">${last ? last.temp_selo_la + '°C' : '—'}</td>
-            <td style="padding:6px 8px;text-align:center">${last ? last.data : '—'}</td>
+            <td style="padding:6px 8px;text-align:center">${last ? (()=>{const[y,m,d]=last.data.split('-');return `${d}/${m}/${y}`})() : '—'}</td>
             <td style="padding:6px 8px;font-size:10px;color:#666">${motivos[0] || '—'}</td>
           </tr>`;
         }).join('')}
