@@ -6,10 +6,13 @@
 <title>Dashboard — Controle Equipamentos GAs-203</title>
 <meta name="description" content="Dashboard Industrial GAs-203">
 <meta name="theme-color" content="#6b3e1f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap">
 <link rel="manifest" href="manifest.json">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+<style>
 
   :root {
     --bg: #f5f1eb;
@@ -1265,6 +1268,89 @@
     border:2.5px solid rgba(196,127,42,0.70); pointer-events:none; }
   .tv-seal-ring2 { position:absolute; inset:-16px; border-radius:50%;
     border:1.5px solid rgba(196,127,42,0.35); pointer-events:none; }
+
+  /* ===== CORREÇÕES MOBILE / iOS / ANDROID / TABLET ===== */
+
+  /* Touch: elimina delay 300ms e ativa área de toque adequada */
+  button, .filter-btn, .nav-tab, .th-tab, .semaforo-card,
+  .import-btn, .apply-btn, .pdf-btn, .log-btn, .tv-btn-header,
+  .tv-exit, .tv-nav button, .obs-save-btn, .obs-cancel-btn,
+  .clear-log-btn, .modal-close, .obs-delete {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+
+  /* Select nativo: remove aparência iOS */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b5c4a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+  }
+
+  /* Input number: remove setas nativas no iOS/Safari */
+  input[type=number] {
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Scroll inercial iOS em containers overflow */
+  .comparativo-table-wrap,
+  .modal-body,
+  .obs-body,
+  .filter-row,
+  .nav-tabs {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+
+  /* Nav-tabs: scroll horizontal se não couber */
+  .nav-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab { flex-shrink: 0; }
+
+  /* Padding lateral tablet (entre 700px e 900px) */
+  @media(max-width: 900px) and (min-width: 701px) {
+    .main { padding: 24px 24px 48px; }
+  }
+
+  /* TV Mode: position:fixed no iOS Safari dentro de overlay com overflow */
+  #tv-overlay { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .tv-exit  { position: sticky; align-self: flex-start; top: 0; left: 0; z-index: 10000; }
+  .tv-clock { position: sticky; align-self: flex-end; top: 0; right: 0; pointer-events: none; }
+
+  /* Evitar zoom automático em inputs no iOS (font-size mínimo 16px) */
+  input, select, textarea {
+    font-size: max(16px, 13px);
+  }
+  @media(max-width: 700px) {
+    input, select, textarea { font-size: 16px; }
+    .threshold-input { font-size: 16px; width: 72px; }
+  }
+
+  /* Semaforo cards: toque mais fácil no mobile */
+  @media(max-width: 700px) {
+    .semaforo-card { padding: 18px 14px 16px; }
+    .semaforo-nome { font-size: 18px; }
+    .semaforo-luz { width: 42px; height: 42px; font-size: 20px; }
+  }
+
+  /* Botão TV header: esconder texto em tela muito pequena */
+  @media(max-width: 360px) {
+    .tv-btn-header span { display: none; }
+    .tv-btn-header { padding: 8px 10px; }
+  }
   </style>
 </head>
 <body>
