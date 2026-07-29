@@ -186,7 +186,7 @@
     text-transform: uppercase;
   }
   .import-btn {
-    background: var(--caramel-light);
+    background: #fef3e2;
     color: var(--brown);
     border: none;
     padding: 12px 24px;
@@ -200,7 +200,7 @@
     align-items: center;
     gap: 8px;
   }
-  .import-btn:hover { background: #f0ba60; transform: translateY(-1px); }
+  .import-btn:hover { background: #fde8c0; transform: translateY(-1px); }
   .import-btn svg { width: 18px; height: 18px; }
   #fileInput { display: none; }
 
@@ -1351,7 +1351,17 @@
     .tv-btn-header span { display: none; }
     .tv-btn-header { padding: 8px 10px; }
   }
-  </style>
+  
+  .nav-import {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 10px;
+    margin-right: 8px;
+    border: 1.5px solid #f0d4a0;
+  }
+  .nav-import svg { width: 15px; height: 15px; }
+
+</style>
 </head>
 <body>
 
@@ -1363,18 +1373,13 @@
     <div class="header-title-row">
       <span class="logo-label">Sistema de Monitoramento</span>
       <h1>Confiabilidade dos Equipamentos GAs-203</h1>
-      <p id="header-period">Período: Jan – Jul 2026 · 8 equipamentos monitorados</p>
+      <p id="header-period">2026 · 8 equipamentos monitorados</p>
     </div>
     <div class="header-logos-actions">
       <span class="header-badge" id="last-update">Última atualização</span>
-      <button class="import-btn" onclick="document.getElementById('fileInput').click()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Importar Planilha de Dados
-      </button>
-      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileImport(event)" style="display:none">
+      
     </div>
     <div class="header-right">
-      <button class="tv-btn-header" onclick="atualizarManual()" id="btn-sync" title="Atualizar dados do formulário">🔄 Atualizar</button>
       <button class="tv-btn-header" onclick="startTVMode()">📺 Modo TV</button>
     </div>
   </div>
@@ -1460,6 +1465,11 @@
 
 <!-- NAVEGAÇÃO -->
 <div class="nav-tabs">
+  <button class="import-btn nav-import" onclick="document.getElementById('fileInput').click()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    Importar Planilha
+  </button>
+  <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileImport(event)" style="display:none">
   <button class="nav-tab active" id="tab-geral" onclick="showPage('geral')">🚦 Visão Geral</button>
   <button class="nav-tab" id="tab-dashboard" onclick="showPage('dashboard')">📊 Dashboard</button>
 </div>
@@ -2476,7 +2486,7 @@ function updateHeaderPeriod() {
   const label1 = nomes[+m1-1] + '/'+y1;
   const period = label0 === label1 ? label1 : label0 + ' – ' + label1;
   const el = document.getElementById('header-period');
-  if (el) el.textContent = 'Período: ' + period + ' · ' + eqs.length + ' equipamentos monitorados';
+  if (el) el.textContent = '2026 · ' + eqs.length + ' equipamentos monitorados';
 }
 
 function refreshAll() {
