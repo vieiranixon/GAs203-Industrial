@@ -647,6 +647,7 @@
   .semaforo-card.amarelo { background: #ffedd5; border-color: #F97316; }
   .semaforo-card.vermelho { background: #fee2e2; border-color: #DC2626; }
   .semaforo-card.cinza { background: #dbeafe; border-color: #2563EB; }
+  .semaforo-card.manutencao { background: #f3f4f6; border-color: #6B7280; }
   .semaforo-nome {
     font-family: "Playfair Display",serif;
     font-size: 22px;
@@ -656,6 +657,7 @@
   .semaforo-card.amarelo .semaforo-nome { color: #F97316; }
   .semaforo-card.vermelho .semaforo-nome { color: #DC2626; }
   .semaforo-card.cinza .semaforo-nome { color: #2563EB; }
+  .semaforo-card.manutencao .semaforo-nome { color: #6B7280; }
   .semaforo-luz {
     width: 52px; height: 52px;
     border-radius: 50%;
@@ -668,6 +670,7 @@
   .semaforo-card.amarelo .semaforo-luz { background: #F97316; box-shadow: 0 0 16px 4px rgba(249,115,22,.35); }
   .semaforo-card.vermelho .semaforo-luz { background: #DC2626; box-shadow: 0 0 16px 4px rgba(220,38,38,.40); animation: pulseRed 1.5s infinite; }
   .semaforo-card.cinza .semaforo-luz { background: #2563EB; box-shadow: 0 0 16px 4px rgba(37,99,235,.30); }
+  .semaforo-card.manutencao .semaforo-luz { background: #6B7280; box-shadow: 0 0 16px 4px rgba(107,114,128,.30); }
   @keyframes pulseRed {
     0%,100% { box-shadow: 0 0 16px 4px rgba(220,38,38,.40); }
     50% { box-shadow: 0 0 28px 10px rgba(220,38,38,.70); }
@@ -684,6 +687,7 @@
   .semaforo-card.amarelo .semaforo-status { background: rgba(249,115,22,.15); color: #F97316; }
   .semaforo-card.vermelho .semaforo-status { background: rgba(220,38,38,.15); color: #DC2626; }
   .semaforo-card.cinza .semaforo-status { background: rgba(37,99,235,.15); color: #2563EB; }
+  .semaforo-card.manutencao .semaforo-status { background: rgba(107,114,128,.15); color: #6B7280; }
   .semaforo-temps {
     font-size: 11px;
     color: var(--text2);
@@ -1040,6 +1044,32 @@
     align-items: center;
     flex-wrap: wrap;
     margin-bottom: 28px;
+  }
+
+  /* ===== LEGENDA DE STATUS ===== */
+  .status-legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 6px 14px;
+    background: var(--surface2);
+    border-radius: 20px;
+  }
+  .status-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  .status-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
 
   /* ===== OFFLINE BADGE ===== */
@@ -1524,7 +1554,14 @@
 
   <!-- BARRA DE AÇÕES -->
   <div class="action-bar">
-    <button class="log-btn" onclick="openLog()" style="margin-bottom:0;">
+    <div class="status-legend">
+      <span class="status-legend-item"><span class="status-legend-dot" style="background:#16A34A;"></span>Normal</span>
+      <span class="status-legend-item"><span class="status-legend-dot" style="background:#F97316;"></span>Atenção</span>
+      <span class="status-legend-item"><span class="status-legend-dot" style="background:#DC2626;"></span>Crítico</span>
+      <span class="status-legend-item"><span class="status-legend-dot" style="background:#2563EB;"></span>Stand-by</span>
+      <span class="status-legend-item"><span class="status-legend-dot" style="background:#6B7280;"></span>Manutenção</span>
+    </div>
+    <button class="log-btn" onclick="openLog()" style="margin-bottom:0;margin-left:auto;">
       📋 Log de Ocorrências
       <span class="log-badge" id="log-count-badge">0</span>
     </button>
@@ -2724,14 +2761,20 @@ function renderSemaforo() {
 
   grid.innerHTML = ranked.map(({ eq, hs }, idx) => {
     const rank = idx + 1;
-    const { cls, nivel, motivos, last, lastRow } = classifyEquip(eq);
+    const { cls: rawCls, nivel, motivos, last, lastRow } = classifyEquip(eq);
     // Estado real = da última leitura (lastRow), não da última com temperatura
     const estado = lastRow ? lastRow.estado : (last ? last.estado : DATA[eq][DATA[eq].length - 1].estado);
-    const icone = cls === 'verde' ? '✅' : cls === 'amarelo' ? '⚠️' : cls === 'cinza' ? '⏸' : '🔴';
-    const statusLabel = cls === 'verde' ? 'Normal' : cls === 'amarelo' ? 'Atenção' : cls === 'cinza' ? 'Stand-by / Sem dados' : 'CRÍTICO';
+    // Cor do cartão: Manutenção = cinza, Stand-by = azul, senão baseado no Health Score
+    const cls = estado === 'manutenção' ? 'manutencao'
+      : estado === 'stand-by' ? 'cinza'
+      : rawCls === 'cinza' ? 'cinza'
+      : (hs.score >= 80 ? 'verde' : hs.score >= 50 ? 'amarelo' : 'vermelho');
+    const icone = cls === 'verde' ? '✅' : cls === 'amarelo' ? '⚠️' : cls === 'manutencao' ? '🔧' : cls === 'cinza' ? '⏸' : '🔴';
+    const statusLabel = cls === 'verde' ? 'Normal' : cls === 'amarelo' ? 'Atenção' : cls === 'manutencao' ? 'Manutenção' : cls === 'cinza' ? 'Stand-by' : 'CRÍTICO';
 
     const estadoLabel = estado === 'operação' ? '⚙️ Operação' : estado === 'manutenção' ? '🔧 Manutenção' : '⏸ Stand-by';
     const estadoCor   = estado === 'operação' ? '#16A34A' : estado === 'manutenção' ? '#6B7280' : '#2563EB';
+    const estadoBg    = estado === 'operação' ? '#dcfce7' : estado === 'manutenção' ? '#f3f4f6' : '#dbeafe';
 
     // Temperaturas: última leitura COM temperatura (podem ser mais antigas que lastRow)
     const loaVal  = last ? last.temp_selo_loa    : null;
@@ -2748,7 +2791,7 @@ function renderSemaforo() {
 
     const tempsHtml = last ? `
       <div class="semaforo-temps">
-        <span style="font-size:10px;font-weight:700;color:${estadoCor};letter-spacing:.05em;text-transform:uppercase">${estadoLabel}</span><br>
+        <span style="font-size:10px;font-weight:700;color:${estadoCor};background:${estadoBg};letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:2px">${estadoLabel}</span><br>
         Selo LA: <strong style="color:${laColor}">${laVal ?? '—'}°C</strong><br>
         Selo LOA: <strong style="color:${loaColor}">${loaVal ?? '—'}°C</strong><br>
         Pote LA: <strong style="color:${poteLAColor}">${poteLA ?? '—'} kgf</strong>
@@ -3194,7 +3237,8 @@ function gerarPDF() {
   // ── Ranking por Health Score ──
   const ranked = eqs.map(eq => {
     const hs = calcHealthScore(eq);
-    const { cls, nivel, motivos, last, lastRow } = classifyEquip(eq);
+    const { cls: rawCls, nivel, motivos, last, lastRow } = classifyEquip(eq);
+    const cls = rawCls === 'cinza' ? 'cinza' : (hs.score >= 80 ? 'verde' : hs.score >= 50 ? 'amarelo' : 'vermelho');
     const estado = DATA[eq][DATA[eq].length - 1].estado;
     return { eq, hs, cls, nivel, motivos, last, estado };
   }).sort((a, b) => a.hs.score - b.hs.score);
