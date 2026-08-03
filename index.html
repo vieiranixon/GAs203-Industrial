@@ -386,9 +386,9 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-  .eq-status-badge.operacao { background: #eaf5ed; color: #27ae60; }
-  .eq-status-badge.standby { background: #fef9e7; color: #f39c12; }
-  .eq-status-badge.manutencao { background: #fdecea; color: #e74c3c; }
+  .eq-status-badge.operacao { background: #dcfce7; color: #16A34A; }
+  .eq-status-badge.standby { background: #dbeafe; color: #2563EB; }
+  .eq-status-badge.manutencao { background: #f3f4f6; color: #6B7280; }
   .eq-metric { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
   .eq-metric:last-child { border-bottom: none; }
   .eq-metric-label { color: var(--text2); }
@@ -419,10 +419,10 @@
     font-size: 18px;
     flex-shrink: 0;
   }
-  .insight-icon.warn { background: #fdf3e3; }
-  .insight-icon.good { background: #eaf5ed; }
+  .insight-icon.warn { background: #ffedd5; }
+  .insight-icon.good { background: #dcfce7; }
   .insight-icon.info { background: #f0eef8; }
-  .insight-icon.alert { background: #fdecea; }
+  .insight-icon.alert { background: #fee2e2; }
   .insight-text h4 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
   .insight-text p { font-size: 12px; color: var(--text2); line-height: 1.6; }
 
@@ -479,18 +479,18 @@
     align-items: center;
     gap: 2px;
   }
-  .eq-dia-badge.op  { background: #eaf5ed; }
-  .eq-dia-badge.sb  { background: #fef9e7; }
-  .eq-dia-badge.man { background: #fdecea; }
+  .eq-dia-badge.op  { background: #dcfce7; }
+  .eq-dia-badge.sb  { background: #dbeafe; }
+  .eq-dia-badge.man { background: #f3f4f6; }
   .eq-dia-num {
     font-family: 'Playfair Display', serif;
     font-size: 20px;
     font-weight: 700;
     line-height: 1;
   }
-  .eq-dia-badge.op  .eq-dia-num { color: #27ae60; }
-  .eq-dia-badge.sb  .eq-dia-num { color: #f39c12; }
-  .eq-dia-badge.man .eq-dia-num { color: #e74c3c; }
+  .eq-dia-badge.op  .eq-dia-num { color: #16A34A; }
+  .eq-dia-badge.sb  .eq-dia-num { color: #2563EB; }
+  .eq-dia-badge.man .eq-dia-num { color: #6B7280; }
   .eq-dia-label {
     font-size: 9px;
     font-weight: 600;
@@ -643,19 +643,19 @@
     overflow: hidden;
   }
   .semaforo-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
-  .semaforo-card.verde { background: #eaf5ed; border-color: #27ae60; }
-  .semaforo-card.amarelo { background: #fef9e7; border-color: #f39c12; }
-  .semaforo-card.vermelho { background: #fdecea; border-color: #e74c3c; }
-  .semaforo-card.cinza { background: var(--surface2); border-color: var(--border); }
+  .semaforo-card.verde { background: #dcfce7; border-color: #16A34A; }
+  .semaforo-card.amarelo { background: #ffedd5; border-color: #F97316; }
+  .semaforo-card.vermelho { background: #fee2e2; border-color: #DC2626; }
+  .semaforo-card.cinza { background: #dbeafe; border-color: #2563EB; }
   .semaforo-nome {
     font-family: "Playfair Display",serif;
     font-size: 22px;
     font-weight: 700;
   }
-  .semaforo-card.verde .semaforo-nome { color: #1a7a3c; }
-  .semaforo-card.amarelo .semaforo-nome { color: #b5770d; }
-  .semaforo-card.vermelho .semaforo-nome { color: #c0392b; }
-  .semaforo-card.cinza .semaforo-nome { color: var(--text2); }
+  .semaforo-card.verde .semaforo-nome { color: #16A34A; }
+  .semaforo-card.amarelo .semaforo-nome { color: #F97316; }
+  .semaforo-card.vermelho .semaforo-nome { color: #DC2626; }
+  .semaforo-card.cinza .semaforo-nome { color: #2563EB; }
   .semaforo-luz {
     width: 52px; height: 52px;
     border-radius: 50%;
@@ -664,13 +664,13 @@
     margin-bottom: 4px;
     box-shadow: 0 0 0 6px rgba(0,0,0,.06);
   }
-  .semaforo-card.verde .semaforo-luz { background: #27ae60; box-shadow: 0 0 16px 4px rgba(39,174,96,.35); }
-  .semaforo-card.amarelo .semaforo-luz { background: #f39c12; box-shadow: 0 0 16px 4px rgba(243,156,18,.35); }
-  .semaforo-card.vermelho .semaforo-luz { background: #e74c3c; box-shadow: 0 0 16px 4px rgba(231,76,60,.40); animation: pulseRed 1.5s infinite; }
-  .semaforo-card.cinza .semaforo-luz { background: var(--border); }
+  .semaforo-card.verde .semaforo-luz { background: #16A34A; box-shadow: 0 0 16px 4px rgba(22,163,74,.35); }
+  .semaforo-card.amarelo .semaforo-luz { background: #F97316; box-shadow: 0 0 16px 4px rgba(249,115,22,.35); }
+  .semaforo-card.vermelho .semaforo-luz { background: #DC2626; box-shadow: 0 0 16px 4px rgba(220,38,38,.40); animation: pulseRed 1.5s infinite; }
+  .semaforo-card.cinza .semaforo-luz { background: #2563EB; box-shadow: 0 0 16px 4px rgba(37,99,235,.30); }
   @keyframes pulseRed {
-    0%,100% { box-shadow: 0 0 16px 4px rgba(231,76,60,.40); }
-    50% { box-shadow: 0 0 28px 10px rgba(231,76,60,.70); }
+    0%,100% { box-shadow: 0 0 16px 4px rgba(220,38,38,.40); }
+    50% { box-shadow: 0 0 28px 10px rgba(220,38,38,.70); }
   }
   .semaforo-status {
     font-size: 11px;
@@ -680,10 +680,10 @@
     padding: 3px 12px;
     border-radius: 20px;
   }
-  .semaforo-card.verde .semaforo-status { background: rgba(39,174,96,.15); color: #1a7a3c; }
-  .semaforo-card.amarelo .semaforo-status { background: rgba(243,156,18,.15); color: #b5770d; }
-  .semaforo-card.vermelho .semaforo-status { background: rgba(231,76,60,.15); color: #c0392b; }
-  .semaforo-card.cinza .semaforo-status { background: var(--border); color: var(--text2); }
+  .semaforo-card.verde .semaforo-status { background: rgba(22,163,74,.15); color: #16A34A; }
+  .semaforo-card.amarelo .semaforo-status { background: rgba(249,115,22,.15); color: #F97316; }
+  .semaforo-card.vermelho .semaforo-status { background: rgba(220,38,38,.15); color: #DC2626; }
+  .semaforo-card.cinza .semaforo-status { background: rgba(37,99,235,.15); color: #2563EB; }
   .semaforo-temps {
     font-size: 11px;
     color: var(--text2);
@@ -761,8 +761,8 @@
     background: var(--surface2);
   }
   .threshold-input:focus { border-color: var(--caramel); outline: none; }
-  .tag-atencao { font-size: 10px; font-weight:700; background:#fef9e7; color:#b5770d; border:1px solid #f39c12; border-radius:6px; padding:2px 6px; }
-  .tag-critico { font-size: 10px; font-weight:700; background:#fdecea; color:#c0392b; border:1px solid #e74c3c; border-radius:6px; padding:2px 6px; }
+  .tag-atencao { font-size: 10px; font-weight:700; background:#ffedd5; color:#F97316; border:1px solid #F97316; border-radius:6px; padding:2px 6px; }
+  .tag-critico { font-size: 10px; font-weight:700; background:#fee2e2; color:#DC2626; border:1px solid #DC2626; border-radius:6px; padding:2px 6px; }
   .apply-btn {
     background: var(--caramel);
     color: white;
@@ -867,9 +867,9 @@
     font-size: 16px;
     flex-shrink: 0;
   }
-  .log-icon.critico { background: #fdecea; }
-  .log-icon.atencao { background: #fef9e7; }
-  .log-icon.manutencao { background: #fdf3e3; }
+  .log-icon.critico { background: #fee2e2; }
+  .log-icon.atencao { background: #ffedd5; }
+  .log-icon.manutencao { background: #f3f4f6; }
   .log-text { flex: 1; }
   .log-text strong { font-size: 13px; color: var(--text); display: block; margin-bottom: 2px; }
   .log-text span { font-size: 11px; color: var(--text3); }
@@ -882,9 +882,9 @@
     gap: 10px;
   }
   .clear-log-btn {
-    background: #fdecea;
-    color: #c0392b;
-    border: 1px solid #e74c3c;
+    background: #fee2e2;
+    color: #DC2626;
+    border: 1px solid #DC2626;
     padding: 8px 18px;
     border-radius: 8px;
     font-family: "DM Sans",sans-serif;
@@ -892,7 +892,7 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .clear-log-btn:hover { background: #e74c3c; color: white; }
+  .clear-log-btn:hover { background: #DC2626; color: white; }
 
 
 
@@ -1110,15 +1110,15 @@
       padding: 12px;
       text-align: center;
     }
-    .print-card.verde { border-color: #27ae60; background: #f0fbf4; }
-    .print-card.amarelo { border-color: #f39c12; background: #fffbf0; }
-    .print-card.vermelho { border-color: #e74c3c; background: #fff5f5; }
-    .print-card.cinza { border-color: #ccc; background: #f8f8f8; }
+    .print-card.verde { border-color: #16A34A; background: #f0fdf4; }
+    .print-card.amarelo { border-color: #F97316; background: #fff7ed; }
+    .print-card.vermelho { border-color: #DC2626; background: #fef2f2; }
+    .print-card.cinza { border-color: #2563EB; background: #eff6ff; }
     .print-card-nome { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
     .print-card-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
-    .print-card.verde .print-card-nome { color: #1a7a3c; }
-    .print-card.amarelo .print-card-nome { color: #b5770d; }
-    .print-card.vermelho .print-card-nome { color: #c0392b; }
+    .print-card.verde .print-card-nome { color: #16A34A; }
+    .print-card.amarelo .print-card-nome { color: #F97316; }
+    .print-card.vermelho .print-card-nome { color: #DC2626; }
     .print-card-temps { font-size: 10px; color: #6b5c4a; margin-top: 6px; line-height: 1.6; }
     .print-card-motivo { font-size: 9px; color: #a08c78; margin-top: 4px; }
     .print-obs { margin-top: 6px; font-size: 9px; color: #6b3e1f; font-style: italic; }
@@ -1222,18 +1222,18 @@
   .tv-eq-name { font-size:clamp(28px,7vw,72px); font-weight:900; letter-spacing:-.02em; color:#fff; margin-bottom:6px; text-align:center; }
   .tv-status-pill { font-size:clamp(12px,3vw,22px); font-weight:700; border-radius:30px;
     padding:6px 22px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:16px; }
-  .tv-status-pill.verde   { background:#27ae60; color:#fff; }
-  .tv-status-pill.amarelo { background:#f39c12; color:#fff; }
-  .tv-status-pill.vermelho{ background:#e74c3c; color:#fff; animation:pulseRed 1.2s infinite; }
-  .tv-status-pill.cinza   { background:#555; color:#ccc; }
+  .tv-status-pill.verde   { background:#16A34A; color:#fff; }
+  .tv-status-pill.amarelo { background:#F97316; color:#fff; }
+  .tv-status-pill.vermelho{ background:#DC2626; color:#fff; animation:pulseRed 1.2s infinite; }
+  .tv-status-pill.cinza   { background:#2563EB; color:#fff; }
   .tv-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; width:100%; max-width:700px; }
   @media(max-width:500px) { .tv-grid { grid-template-columns:repeat(2,1fr); gap:8px; } }
   .tv-kpi { background:#1a1a1a; border-radius:12px; padding:12px 10px; text-align:center; }
   .tv-kpi-label { font-size:10px; color:#888; text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; }
   .tv-kpi-val { font-size:clamp(20px,5vw,44px); font-weight:800; }
-  .tv-kpi-val.hot  { color:#e74c3c; }
-  .tv-kpi-val.warn { color:#f39c12; }
-  .tv-kpi-val.ok   { color:#27ae60; }
+  .tv-kpi-val.hot  { color:#DC2626; }
+  .tv-kpi-val.warn { color:#F97316; }
+  .tv-kpi-val.ok   { color:#16A34A; }
   .tv-health-wrap { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
   .tv-health-ring { width:80px; height:80px; flex-shrink:0; }
   @media(min-width:600px) { .tv-health-ring { width:110px; height:110px; } }
@@ -2257,15 +2257,15 @@ function handleFileImport(event) {
 // ============================================================
 function calcHealthScore(eq) {
   var d = DATA[eq];
-  if (!d || !d.length) return { score: 0, color: '#888' };
+  if (!d || !d.length) return { score: 0, color: '#6B7280' };
   var last = null;
   for (var i = d.length - 1; i >= 0; i--) {
     if (d[i].temp_selo_loa != null || d[i].temp_selo_la != null) { last = d[i]; break; }
   }
   var estado = d[d.length - 1].estado;
-  if (estado === 'manutenção') return { score: 40, color: '#f39c12' };
-  if (estado === 'stand-by' && !last) return { score: 60, color: '#aaa' };
-  if (!last) return { score: 50, color: '#aaa' };
+  if (estado === 'manutenção') return { score: 40, color: '#6B7280' };
+  if (estado === 'stand-by' && !last) return { score: 60, color: '#2563EB' };
+  if (!last) return { score: 50, color: '#2563EB' };
 
   var penalty = 0;
   function pen(val, warn, crit) {
@@ -2295,7 +2295,7 @@ function calcHealthScore(eq) {
   penLow(last.pressao_pote_loa, THRESHOLDS.pote_loa_warn, THRESHOLDS.pote_loa_crit);
 
   var score = Math.max(0, Math.min(100, 100 - penalty));
-  var color = score >= 80 ? '#27ae60' : score >= 50 ? '#f39c12' : '#e74c3c';
+  var color = score >= 80 ? '#16A34A' : score >= 50 ? '#F97316' : '#DC2626';
   return { score: score, color: color };
 }
 
@@ -2418,9 +2418,9 @@ function _renderTVSlide() {
     : estadoAtual === 'stand-by' ? '⏸ Stand-by'
     : estadoAtual === 'manutenção' ? '🔧 Manutenção'
     : estadoAtual;
-  var estadoCor = estadoAtual === 'operação' ? '#27ae60'
-    : estadoAtual === 'manutenção' ? '#f39c12'
-    : '#888';
+  var estadoCor = estadoAtual === 'operação' ? '#16A34A'
+    : estadoAtual === 'manutenção' ? '#6B7280'
+    : '#2563EB';
 
   // Estado badge (acima do semáforo pill)
   var estadoEl = document.getElementById('tv-estado-badge');
@@ -2731,7 +2731,7 @@ function renderSemaforo() {
     const statusLabel = cls === 'verde' ? 'Normal' : cls === 'amarelo' ? 'Atenção' : cls === 'cinza' ? 'Stand-by / Sem dados' : 'CRÍTICO';
 
     const estadoLabel = estado === 'operação' ? '⚙️ Operação' : estado === 'manutenção' ? '🔧 Manutenção' : '⏸ Stand-by';
-    const estadoCor   = estado === 'operação' ? '#27ae60' : estado === 'manutenção' ? '#f39c12' : '#888';
+    const estadoCor   = estado === 'operação' ? '#16A34A' : estado === 'manutenção' ? '#6B7280' : '#2563EB';
 
     // Temperaturas: última leitura COM temperatura (podem ser mais antigas que lastRow)
     const loaVal  = last ? last.temp_selo_loa    : null;
@@ -2739,10 +2739,10 @@ function renderSemaforo() {
     // Pote: sempre a leitura MAIS RECENTE (lastRow), pois costuma existir mesmo em stand-by
     const poteLA  = lastRow ? lastRow.pressao_pote_la  : (last ? last.pressao_pote_la  : null);
     const poteLOA = lastRow ? lastRow.pressao_pote_loa : (last ? last.pressao_pote_loa : null);
-    const loaColor  = loaVal  == null ? '#a08c78' : (loaVal >= THRESHOLDS.loa_crit ? '#c0392b' : loaVal >= THRESHOLDS.loa_warn ? '#e07a3a' : '#27ae60');
-    const laColor   = laVal   == null ? '#a08c78' : (laVal  >= THRESHOLDS.la_crit  ? '#c0392b' : laVal  >= THRESHOLDS.la_warn  ? '#e07a3a' : '#27ae60');
-    const poteLAColor  = poteLA  != null ? (poteLA  <= THRESHOLDS.pote_la_crit  ? '#c0392b' : poteLA  <= THRESHOLDS.pote_la_warn  ? '#e07a3a' : '#27ae60') : '#a08c78';
-    const poteLOAColor = poteLOA != null ? (poteLOA <= THRESHOLDS.pote_loa_crit ? '#c0392b' : poteLOA <= THRESHOLDS.pote_loa_warn ? '#e07a3a' : '#27ae60') : '#a08c78';
+    const loaColor  = loaVal  == null ? '#a08c78' : (loaVal >= THRESHOLDS.loa_crit ? '#DC2626' : loaVal >= THRESHOLDS.loa_warn ? '#F97316' : '#16A34A');
+    const laColor   = laVal   == null ? '#a08c78' : (laVal  >= THRESHOLDS.la_crit  ? '#DC2626' : laVal  >= THRESHOLDS.la_warn  ? '#F97316' : '#16A34A');
+    const poteLAColor  = poteLA  != null ? (poteLA  <= THRESHOLDS.pote_la_crit  ? '#DC2626' : poteLA  <= THRESHOLDS.pote_la_warn  ? '#F97316' : '#16A34A') : '#a08c78';
+    const poteLOAColor = poteLOA != null ? (poteLOA <= THRESHOLDS.pote_loa_crit ? '#DC2626' : poteLOA <= THRESHOLDS.pote_loa_warn ? '#F97316' : '#16A34A') : '#a08c78';
 
     const fmtDate = (iso) => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
 
@@ -2761,7 +2761,7 @@ function renderSemaforo() {
     const obsBadge = obsCount > 0 ? `<span class="obs-badge">${obsCount}</span>` : '';
 
     // Rank badge color
-    const rankColor = rank === 1 ? '#e74c3c' : rank === 2 ? '#e07a3a' : rank <= 4 ? '#f39c12' : '#27ae60';
+    const rankColor = rank === 1 ? '#DC2626' : rank === 2 ? '#F97316' : rank <= 4 ? '#F97316' : '#16A34A';
     const rankBadge = `<div style="position:absolute;top:8px;left:8px;width:24px;height:24px;border-radius:50%;
       background:${rankColor};color:#fff;font-size:11px;font-weight:800;
       display:flex;align-items:center;justify-content:center;z-index:2">#${rank}</div>`;
@@ -2780,7 +2780,7 @@ function renderSemaforo() {
 
     // Critical card gets a glowing border
     const criticalStyle = rank === 1 && cls === 'vermelho'
-      ? 'box-shadow:0 0 0 3px #e74c3c, 0 8px 32px rgba(231,76,60,.25);'
+      ? 'box-shadow:0 0 0 3px #DC2626, 0 8px 32px rgba(220,38,38,.25);'
       : '';
 
     return `<div class="semaforo-card ${cls} fade-in" onclick="goToDashboard('${eq}')" style="${criticalStyle}position:relative">
@@ -3208,26 +3208,26 @@ function gerarPDF() {
   const piorEq    = ranked[0];
   const melhorEq  = ranked[ranked.length - 1];
 
-  const summaryColor = criticos > 0 ? '#e74c3c' : atencao > 0 ? '#f39c12' : '#27ae60';
+  const summaryColor = criticos > 0 ? '#DC2626' : atencao > 0 ? '#F97316' : '#16A34A';
   const summaryLabel = criticos > 0 ? '⚠ ATENÇÃO NECESSÁRIA' : atencao > 0 ? 'MONITORAR' : '✓ OPERAÇÃO NORMAL';
 
   const summaryHtml = `
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0;">
-      <div style="background:#fdecea;border:1.5px solid #e74c3c;border-radius:10px;padding:12px;text-align:center">
-        <div style="font-size:28px;font-weight:900;color:#e74c3c">${criticos}</div>
-        <div style="font-size:10px;color:#c0392b;font-weight:700;text-transform:uppercase">Crítico</div>
+      <div style="background:#fee2e2;border:1.5px solid #DC2626;border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#DC2626">${criticos}</div>
+        <div style="font-size:10px;color:#DC2626;font-weight:700;text-transform:uppercase">Crítico</div>
       </div>
-      <div style="background:#fef9e7;border:1.5px solid #f39c12;border-radius:10px;padding:12px;text-align:center">
-        <div style="font-size:28px;font-weight:900;color:#f39c12">${atencao}</div>
-        <div style="font-size:10px;color:#b5770d;font-weight:700;text-transform:uppercase">Atenção</div>
+      <div style="background:#ffedd5;border:1.5px solid #F97316;border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#F97316">${atencao}</div>
+        <div style="font-size:10px;color:#F97316;font-weight:700;text-transform:uppercase">Atenção</div>
       </div>
-      <div style="background:#eaf5ed;border:1.5px solid #27ae60;border-radius:10px;padding:12px;text-align:center">
-        <div style="font-size:28px;font-weight:900;color:#27ae60">${normais}</div>
-        <div style="font-size:10px;color:#1a7a3c;font-weight:700;text-transform:uppercase">Normal</div>
+      <div style="background:#dcfce7;border:1.5px solid #16A34A;border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#16A34A">${normais}</div>
+        <div style="font-size:10px;color:#16A34A;font-weight:700;text-transform:uppercase">Normal</div>
       </div>
-      <div style="background:#f5f1eb;border:1.5px solid #ccc;border-radius:10px;padding:12px;text-align:center">
-        <div style="font-size:28px;font-weight:900;color:#888">${inativos}</div>
-        <div style="font-size:10px;color:#666;font-weight:700;text-transform:uppercase">Inativo</div>
+      <div style="background:#dbeafe;border:1.5px solid #2563EB;border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#2563EB">${inativos}</div>
+        <div style="font-size:10px;color:#2563EB;font-weight:700;text-transform:uppercase">Stand-by</div>
       </div>
       <div style="background:#fff8f2;border:1.5px solid #c47f2a;border-radius:10px;padding:12px;text-align:center">
         <div style="font-size:28px;font-weight:900;color:#c47f2a">${avgScore}</div>
@@ -3235,14 +3235,14 @@ function gerarPDF() {
       </div>
     </div>
     <div style="display:flex;gap:16px;margin-bottom:16px;">
-      <div style="flex:1;background:#f9f6f2;border-radius:10px;padding:12px 16px;border-left:4px solid #e74c3c;">
+      <div style="flex:1;background:#f9f6f2;border-radius:10px;padding:12px 16px;border-left:4px solid #DC2626;">
         <div style="font-size:10px;text-transform:uppercase;font-weight:700;color:#888;margin-bottom:4px">Equipamento Mais Crítico</div>
-        <div style="font-size:18px;font-weight:900;color:#e74c3c">${piorEq.eq}</div>
+        <div style="font-size:18px;font-weight:900;color:#DC2626">${piorEq.eq}</div>
         <div style="font-size:12px;color:#666">Health Score: ${piorEq.hs.score} &nbsp;·&nbsp; ${piorEq.motivos[0] || 'Verificar leituras'}</div>
       </div>
-      <div style="flex:1;background:#f9f6f2;border-radius:10px;padding:12px 16px;border-left:4px solid #27ae60;">
+      <div style="flex:1;background:#f9f6f2;border-radius:10px;padding:12px 16px;border-left:4px solid #16A34A;">
         <div style="font-size:10px;text-transform:uppercase;font-weight:700;color:#888;margin-bottom:4px">Melhor Desempenho</div>
-        <div style="font-size:18px;font-weight:900;color:#27ae60">${melhorEq.eq}</div>
+        <div style="font-size:18px;font-weight:900;color:#16A34A">${melhorEq.eq}</div>
         <div style="font-size:12px;color:#666">Health Score: ${melhorEq.hs.score} &nbsp;·&nbsp; Operação estável</div>
       </div>
     </div>`;
@@ -3265,11 +3265,11 @@ function gerarPDF() {
       </thead>
       <tbody>
         ${ranked.map(({ eq, hs, cls, motivos, last, estado }, i) => {
-          const rankColor = i === 0 ? '#e74c3c' : i === 1 ? '#e07a3a' : i <= 3 ? '#f39c12' : '#27ae60';
+          const rankColor = i === 0 ? '#DC2626' : i === 1 ? '#F97316' : i <= 3 ? '#F97316' : '#16A34A';
           const rowBg = i % 2 === 0 ? '#fff' : '#faf7f4';
           const statusLabel = cls === 'verde' ? 'Normal' : cls === 'amarelo' ? 'Atenção' : cls === 'cinza' ? 'Stand-by' : 'CRÍTICO';
-          const statusBg = cls === 'verde' ? '#eaf5ed' : cls === 'amarelo' ? '#fef9e7' : cls === 'cinza' ? '#f0f0f0' : '#fdecea';
-          const statusCol = cls === 'verde' ? '#27ae60' : cls === 'amarelo' ? '#f39c12' : cls === 'cinza' ? '#888' : '#e74c3c';
+          const statusBg = cls === 'verde' ? '#dcfce7' : cls === 'amarelo' ? '#ffedd5' : cls === 'cinza' ? '#dbeafe' : '#fee2e2';
+          const statusCol = cls === 'verde' ? '#16A34A' : cls === 'amarelo' ? '#F97316' : cls === 'cinza' ? '#2563EB' : '#DC2626';
           const estadoLabel = estado === 'operação' ? '⚙️ Op.' : estado === 'manutenção' ? '🔧 Man.' : '⏸ SB';
           return `<tr style="background:${rowBg}">
             <td style="padding:6px 8px;text-align:center;font-weight:900;color:${rankColor}">#${i+1}</td>
@@ -3315,7 +3315,7 @@ function gerarPDF() {
         <tbody>
           ${log.map((e, i) => `<tr style="background:${i%2===0?'#fff':'#faf7f4'}">
             <td style="padding:5px 8px;font-weight:700">${e.eq}</td>
-            <td style="padding:5px 8px;text-align:center;color:${e.nivel>=2?'#e74c3c':'#f39c12'};font-weight:700">${e.nivel>=2?'CRÍTICO':'Atenção'}</td>
+            <td style="padding:5px 8px;text-align:center;color:${e.nivel>=2?'#DC2626':'#F97316'};font-weight:700">${e.nivel>=2?'CRÍTICO':'Atenção'}</td>
             <td style="padding:5px 8px;text-align:center">${e.data}</td>
             <td style="padding:5px 8px">${e.motivos.join(' · ')}</td>
             <td style="padding:5px 8px;text-align:center;color:#a08c78">${e.registrado}</td>
