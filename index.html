@@ -2238,6 +2238,22 @@ function handleFileImport(event) {
             const d = new Date(Date.UTC(1899, 11, 30) + v * 86400000);
             return d.toISOString().slice(0, 10);
           }
+          // Text-format date fallback (ex: "07/08/26", "07/08/2026", "07-08-2026")
+          if (typeof v === 'string') {
+            const s = v.trim();
+            const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+            if (m) {
+              let [, dd, mm, yy] = m;
+              dd = parseInt(dd, 10);
+              mm = parseInt(mm, 10);
+              yy = parseInt(yy, 10);
+              if (yy < 100) yy += 2000;
+              if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+                const d = new Date(Date.UTC(yy, mm - 1, dd));
+                if (!isNaN(d)) return d.toISOString().slice(0, 10);
+              }
+            }
+          }
           return null;
         };
 
