@@ -1451,6 +1451,81 @@
 </div>
 
 
+<!-- MODAL LEGENDA DO CARTÃO -->
+<div class="modal-overlay" id="modal-legend">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>ℹ️ O que significa cada item do cartão</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-legend').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px;font-family:'DM Sans',sans-serif;color:var(--brown);font-size:13px;line-height:1.5;">
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">#1</div>
+          <div><strong>Ranking (canto superior esquerdo)</strong><br>
+          Posição do equipamento no ranking de Health Score — do pior (#1, vermelho/laranja) para o melhor (verde). Ajuda a identificar rapidamente quem precisa de atenção primeiro.</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">✅⚠️🔴🔧⏸</div>
+          <div><strong>Ícone e cor do cartão</strong><br>
+          Reflete o estado geral do equipamento: ✅ verde = Normal, ⚠️ laranja = Atenção, 🔴 vermelho = Crítico, 🔧 cinza = Manutenção, ⏸ azul = Stand-by.</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">🏷️</div>
+          <div><strong>Selo "NORMAL / ATENÇÃO / CRÍTICO"</strong><br>
+          Classificação textual do mesmo status indicado pela cor/ícone acima, baseada nos limites de alerta configurados para cada equipamento.</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">⚙️</div>
+          <div><strong>Operação / Manutenção / Stand-by</strong><br>
+          Estado operacional do equipamento na última leitura registrada na planilha (coluna "Status").</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">🌡️</div>
+          <div><strong>Selo LA / Selo LOA</strong><br>
+          Temperatura sobreposta do selo mecânico, lado de acionamento (LA) e lado oposto ao acionamento (LOA), na última leitura com temperatura registrada. A cor muda conforme os limites de Atenção/Crítico configurados.</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">🧪</div>
+          <div><strong>Pote LA / Pote LOA</strong><br>
+          Pressão do pote de selagem (kgf/cm²), lado LA e lado LOA, sempre da leitura mais recente disponível — mesmo que o equipamento esteja em stand-by.</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">📅</div>
+          <div><strong>Última leitura</strong><br>
+          Data do registro mais recente na planilha para aquele equipamento. Se a leitura de temperatura for de uma data anterior à última leitura geral, isso aparece indicado abaixo em texto menor.</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">💯</div>
+          <div><strong>Health Score</strong><br>
+          Pontuação de 0 a 100 que resume a saúde geral do equipamento, calculada a partir das temperaturas, pressões e histórico de alertas. Quanto mais alto, melhor — abaixo de 50 costuma indicar situação crítica.</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">📝</div>
+          <div><strong>Texto pequeno abaixo da barra de Health Score</strong><br>
+          Explica o principal motivo da classificação atual (ex.: "Operação normal", ou o parâmetro que está fora do limite).</div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="min-width:26px;font-size:15px;text-align:center;">📝</div>
+          <div><strong>Botão "Observações"</strong><br>
+          Abre um campo para registrar anotações manuais sobre aquele equipamento (ex.: manutenções realizadas, ocorrências). Um número ao lado indica quantas observações já foram registradas.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL LOG DE ALERTAS -->
 <div class="modal-overlay" id="modal-log">
   <div class="modal-box">
@@ -1561,6 +1636,9 @@
       <span class="status-legend-item"><span class="status-legend-dot" style="background:#2563EB;"></span>Stand-by</span>
       <span class="status-legend-item"><span class="status-legend-dot" style="background:#6B7280;"></span>Manutenção</span>
     </div>
+    <button class="log-btn" onclick="document.getElementById('modal-legend').classList.add('open')" style="margin-bottom:0;">
+      ℹ️ O que significa cada item?
+    </button>
     <button class="log-btn" onclick="openLog()" style="margin-bottom:0;margin-left:auto;">
       📋 Log de Ocorrências
       <span class="log-badge" id="log-count-badge">0</span>
