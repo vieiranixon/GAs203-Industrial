@@ -2284,90 +2284,7 @@ function handleFileImport(event) {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        // Parse with raw:true + cellDates:true → dates come as JS Date objects
-        const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true, cellNF: false, cellText: false });
-        // Find the main data sheet (first sheet or the one with equipment data)
-        let wsName = wb.SheetNames[0];
-        for (const name of wb.SheetNames) {
-          const s = wb.Sheets[name];
-          const ref = s['!ref'];
-          if (ref && XLSX.utils.decode_range(ref).e.r > 5) { wsName = name; break; }
-        }
-        const ws = wb.Sheets[wsName];
-        if (!ws) { alert('Não foi possível ler a planilha.'); return; }
-        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true }) || [];
-        const newData = {};
-        let curEq = null, curData = [];
-
-        const sf = v => {
-          if (v === null || v === undefined || v === '-' || v === '') return null;
-          const f = parseFloat(v);
-          return isNaN(f) || f <= 0 ? null : f;
-        };
-
-        const fmtDate = (v) => {
-          if (!v) return null;
-          // JS Date object (from cellDates:true)
-          if (v instanceof Date && !isNaN(v)) {
-            return v.toISOString().slice(0, 10);
-          }
-          // Excel serial number fallback
-          if (typeof v === 'number' && v > 40000 && v < 60000) {
-            const d = new Date(Date.UTC(1899, 11, 30) + v * 86400000);
-            return d.toISOString().slice(0, 10);
-          }
-          // Text-format date fallback (ex: "07/08/26", "07/08/2026", "07-08-2026")
-          if (typeof v === 'string') {
-            const s = v.trim();
-            const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
-            if (m) {
-              let [, dd, mm, yy] = m;
-              dd = parseInt(dd, 10);
-              mm = parseInt(mm, 10);
-              yy = parseInt(yy, 10);
-              if (yy < 100) yy += 2000;
-              if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
-                const d = new Date(Date.UTC(yy, mm - 1, dd));
-                if (!isNaN(d)) return d.toISOString().slice(0, 10);
-              }
-            }
-          }
-          return null;
-        };
-
-        raw.forEach(row => {
-          if (!row || row.length === 0) return;
-          const cell0 = row[0];
-          // Equipment header row: string starting with G (GA-203A, GAT-203B, etc.)
-          if (cell0 && typeof cell0 === 'string' && /^GA[T]?-203/.test(cell0.trim())) {
-            if (curEq && curData.length) newData[curEq] = curData;
-            curEq = cell0.trim();
-            curData = [];
-          } else if (curEq && cell0) {
-            const dateStr = fmtDate(cell0);
-            if (dateStr) {
-              const status = String(row[13] || '').toLowerCase();
-              const estado = (status.includes('stand') || status.includes('stb'))
-                ? 'stand-by'
-                : (status.includes('manu') || status.includes('mnt'))
-                ? 'manutenção'
-                : 'operação';
-              curData.push({
-                data: dateStr,
-                pressao_succao:  sf(row[1]),
-                pressao_descarga: sf(row[2]),
-                pressao_pote_la:  sf(row[7]),
-                pressao_pote_loa: sf(row[8]),
-                temp_selo_la:     sf(row[9]),
-                temp_selo_loa:    sf(row[10]),
-                temp_mancal_la:   sf(row[11]),
-                temp_mancal_loa:  sf(row[12]),
-                estado
-              });
-            }
-          }
-        });
-        if (curEq && curData.length) newData[curEq] = curData;
+        const newData = parseWorkbookToData(e.target.result, 'binary');
         const totalRows = Object.values(newData).reduce((s, r) => s + r.length, 0);
         if (Object.keys(newData).length > 0 && totalRows > 0) {
           _dataJustImported = true;
@@ -2381,6 +2298,131 @@ function handleFileImport(event) {
     reader.readAsBinaryString(file);
   }
   event.target.value = '';
+}
+
+// ============================================================
+// PARSER COMPARTILHADO (usado pela importação manual e pelo
+// carregamento automático via GitHub)
+// ============================================================
+function parseWorkbookToData(fileData, xlsxType) {
+  // xlsxType: 'binary' (string binária) ou 'array' (ArrayBuffer)
+  const wb = XLSX.read(fileData, { type: xlsxType, cellDates: true, cellNF: false, cellText: false });
+  // Find the main data sheet (first sheet or the one with equipment data)
+  let wsName = wb.SheetNames[0];
+  for (const name of wb.SheetNames) {
+    const s = wb.Sheets[name];
+    const ref = s['!ref'];
+    if (ref && XLSX.utils.decode_range(ref).e.r > 5) { wsName = name; break; }
+  }
+  const ws = wb.Sheets[wsName];
+  if (!ws) throw new Error('Não foi possível ler a planilha.');
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true }) || [];
+  const newData = {};
+  let curEq = null, curData = [];
+
+  const sf = v => {
+    if (v === null || v === undefined || v === '-' || v === '') return null;
+    const f = parseFloat(v);
+    return isNaN(f) || f <= 0 ? null : f;
+  };
+
+  const fmtDate = (v) => {
+    if (!v) return null;
+    // JS Date object (from cellDates:true)
+    if (v instanceof Date && !isNaN(v)) {
+      return v.toISOString().slice(0, 10);
+    }
+    // Excel serial number fallback
+    if (typeof v === 'number' && v > 40000 && v < 60000) {
+      const d = new Date(Date.UTC(1899, 11, 30) + v * 86400000);
+      return d.toISOString().slice(0, 10);
+    }
+    // Text-format date fallback (ex: "07/08/26", "07/08/2026", "07-08-2026")
+    if (typeof v === 'string') {
+      const s = v.trim();
+      const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+      if (m) {
+        let [, dd, mm, yy] = m;
+        dd = parseInt(dd, 10);
+        mm = parseInt(mm, 10);
+        yy = parseInt(yy, 10);
+        if (yy < 100) yy += 2000;
+        if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+          const d = new Date(Date.UTC(yy, mm - 1, dd));
+          if (!isNaN(d)) return d.toISOString().slice(0, 10);
+        }
+      }
+    }
+    return null;
+  };
+
+  raw.forEach(row => {
+    if (!row || row.length === 0) return;
+    const cell0 = row[0];
+    // Equipment header row: string starting with G (GA-203A, GAT-203B, etc.)
+    if (cell0 && typeof cell0 === 'string' && /^GA[T]?-203/.test(cell0.trim())) {
+      if (curEq && curData.length) newData[curEq] = curData;
+      curEq = cell0.trim();
+      curData = [];
+    } else if (curEq && cell0) {
+      const dateStr = fmtDate(cell0);
+      if (dateStr) {
+        const status = String(row[13] || '').toLowerCase();
+        const estado = (status.includes('stand') || status.includes('stb'))
+          ? 'stand-by'
+          : (status.includes('manu') || status.includes('mnt'))
+          ? 'manutenção'
+          : 'operação';
+        curData.push({
+          data: dateStr,
+          pressao_succao:  sf(row[1]),
+          pressao_descarga: sf(row[2]),
+          pressao_pote_la:  sf(row[7]),
+          pressao_pote_loa: sf(row[8]),
+          temp_selo_la:     sf(row[9]),
+          temp_selo_loa:    sf(row[10]),
+          temp_mancal_la:   sf(row[11]),
+          temp_mancal_loa:  sf(row[12]),
+          estado
+        });
+      }
+    }
+  });
+  if (curEq && curData.length) newData[curEq] = curData;
+  return newData;
+}
+
+// ============================================================
+// CARREGAMENTO AUTOMÁTICO DA PLANILHA HOSPEDADA NO GITHUB
+// ============================================================
+const GITHUB_XLSX_URL = 'https://raw.githubusercontent.com/vieiranixon/GAs203-Industrial/main/dados/dados_ga203.xlsx';
+
+async function carregarPlanilhaGitHub() {
+  const el = document.getElementById('idb-status');
+  try {
+    if (el) el.innerHTML = '<span class="idb-badge" style="background:#e07a3a">⟳ Buscando planilha atualizada...</span>';
+    const resp = await fetch(GITHUB_XLSX_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const newData = parseWorkbookToData(buf, 'array');
+    const totalRows = Object.values(newData).reduce((s, r) => s + r.length, 0);
+    if (Object.keys(newData).length > 0 && totalRows > 0) {
+      DATA = newData;
+      refreshAll();
+      if (el) {
+        el.innerHTML = '<span class="idb-badge" style="background:#27ae60">✓ Planilha atualizada</span>';
+        setTimeout(() => { if (el) el.innerHTML = ''; }, 3000);
+      }
+    } else {
+      throw new Error('Planilha vazia ou em formato inesperado');
+    }
+  } catch (err) {
+    console.warn('Não foi possível carregar a planilha do GitHub:', err);
+    if (el) {
+      el.innerHTML = '<span class="idb-badge" style="background:#b03a2e">⚠ Usando dados locais (falha ao buscar planilha)</span>';
+      setTimeout(() => { if (el) el.innerHTML = ''; }, 5000);
+    }
+  }
 }
 
 // ============================================================
@@ -2706,6 +2748,9 @@ window.addEventListener('DOMContentLoaded', () => {
   _buildDynamicSelects();
   try { updateComparativo(); } catch(e) {}
   updateHeaderPeriod();
+
+  // Busca a planilha mais recente hospedada no GitHub (não bloqueia o render inicial)
+  carregarPlanilhaGitHub();
 });
 
 function _buildDynamicSelects() {
