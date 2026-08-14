@@ -2254,6 +2254,7 @@ function handleFileImport(event) {
       const parsed = {};
       const eqIdx = headers.findIndex(h => /equip|tag|ga/i.test(h));
       const dateIdx = headers.findIndex(h => /data|date/i.test(h));
+      const obsIdx = headers.findIndex(h => /observ/.test(_normalizeTxt(h)));
       if (eqIdx < 0 || dateIdx < 0) { alert('CSV deve ter colunas "Equipamento" e "Data".'); return; }
       lines.slice(1).forEach(line => {
         if (!line.trim()) return;
@@ -2272,7 +2273,8 @@ function handleFileImport(event) {
           temp_selo_loa: parseFloat(cols[10]) || null,
           temp_mancal_la: parseFloat(cols[11]) || null,
           temp_mancal_loa: parseFloat(cols[12]) || null,
-          estado: 'operação'
+          estado: 'operação',
+          observacao: obsIdx >= 0 ? sfText(cols[obsIdx]) : null
         });
       });
       _dataJustImported = true;
@@ -2314,6 +2316,34 @@ function sf(v) {
   return isNaN(f) || f <= 0 ? null : f;
 }
 
+// Texto livre (ex: coluna "Observações"): não é numérico, só normaliza/limpa
+function sfText(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  if (s === '' || s === '-' || /^-+$/.test(s)) return null;
+  return s;
+}
+
+// Remove acentos p/ comparação de cabeçalho (ex: "Observações" == "observacoes")
+function _normalizeTxt(s) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+// Varre todas as linhas/colunas da planilha procurando o cabeçalho "Observações"
+// (em qualquer bloco de equipamento) e devolve o índice da coluna. Detecção
+// dinâmica de propósito: evita fixar um índice numérico que quebre se a
+// planilha ganhar/perder colunas no futuro.
+function findObsColIndex(raw) {
+  for (const row of raw) {
+    if (!row) continue;
+    for (let i = 0; i < row.length; i++) {
+      const cell = row[i];
+      if (typeof cell === 'string' && /observ/.test(_normalizeTxt(cell))) return i;
+    }
+  }
+  return -1;
+}
+
 function fmtDate(v) {
   if (!v) return null;
   // JS Date object (from cellDates:true)
@@ -2349,6 +2379,7 @@ function fmtDate(v) {
 function buildDataFromRows(raw) {
   const newData = {};
   let curEq = null, curData = [];
+  const obsCol = findObsColIndex(raw);
 
   raw.forEach(row => {
     if (!row || row.length === 0) return;
@@ -2377,7 +2408,8 @@ function buildDataFromRows(raw) {
           temp_selo_loa:    sf(row[10]),
           temp_mancal_la:   sf(row[11]),
           temp_mancal_loa:  sf(row[12]),
-          estado
+          estado,
+          observacao: obsCol >= 0 ? sfText(row[obsCol]) : null
         });
       }
     }
@@ -2956,6 +2988,7 @@ function classifyEquip(eq) {
 function renderSemaforo() {
   const grid = document.getElementById('semaforo-grid');
   if (!grid) return;
+  syncSheetObservacoes();
   const eqs = Object.keys(DATA).filter(k => k !== 'GAT-203G_primeiros_dias');
 
   // Detectar novos alertas para o log
@@ -3162,6 +3195,33 @@ function saveObsAll(all) {
   try { localStorage.setItem(OBS_KEY, JSON.stringify(all)); } catch {}
 }
 
+// Traz para o campo Observações dos cards qualquer texto preenchido na
+// coluna "Observações" da planilha (Google Sheets). Roda a cada renderização
+// do semáforo, sempre substituindo as entradas automáticas antigas pelas
+// atuais (assim edições/remoções feitas na planilha se refletem aqui),
+// sem nunca tocar nas observações digitadas manualmente no dashboard.
+function syncSheetObservacoes() {
+  try {
+    const all = JSON.parse(localStorage.getItem(OBS_KEY) || '{}');
+    let changed = false;
+    Object.keys(DATA).forEach(eq => {
+      const manuais = (all[eq] || []).filter(o => !o.auto);
+      const rows = DATA[eq] || [];
+      const autos = rows
+        .filter(r => r.observacao)
+        .map(r => {
+          const [y, m, d] = r.data.split('-');
+          return { texto: r.observacao, dt: `${d}/${m}/${y}`, data: r.data, auto: true };
+        })
+        .reverse(); // leitura mais recente primeiro
+      const nova = autos.concat(manuais);
+      if (JSON.stringify(nova) !== JSON.stringify(all[eq] || [])) changed = true;
+      if (autos.length || manuais.length) all[eq] = nova;
+    });
+    if (changed) saveObsAll(all);
+  } catch (e) { console.warn('syncSheetObservacoes:', e); }
+}
+
 function openObsModal(eq) {
   _obsEqAtual = eq;
   document.getElementById('obs-eq-title').textContent = eq;
@@ -3212,7 +3272,9 @@ function renderObsList() {
   }
   list.innerHTML = obs.map((o, i) => `
     <div class="obs-entry">
-      <button class="obs-delete" onclick="deleteObs('${_obsEqAtual}', ${i})">✕</button>
+      ${o.auto
+        ? '<span style="font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--olive);background:#eef2e6;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:4px;">📋 Da planilha</span>'
+        : `<button class="obs-delete" onclick="deleteObs('${_obsEqAtual}', ${i})">✕</button>`}
       <p>${o.texto.replace(/\n/g,'<br>')}</p>
       <time>${o.dt}</time>
     </div>`).join('');
