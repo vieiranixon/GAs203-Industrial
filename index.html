@@ -1788,6 +1788,20 @@
     </div>
   </div>
 
+  <!-- REPOSIÇÃO/CONSUMO DE FLUIDO DE SELAGEM -->
+  <div class="charts-row" style="grid-template-columns: 2fr 1fr;">
+    <div class="chart-card">
+      <div class="chart-title">Reposição de Fluido de Selagem</div>
+      <div class="chart-sub">Volume total repostado (L) por equipamento — LA vs LOA</div>
+      <canvas id="barRepoVol" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Nº de Reposições</div>
+      <div class="chart-sub">Eventos de reposição por equipamento</div>
+      <canvas id="barRepoCount" height="220"></canvas>
+    </div>
+  </div>
+
   <!-- #8 COMPARATIVO ENTRE PERÍODOS -->
   <div class="section-title">Comparativo entre Períodos</div>
   <div class="comparativo-wrap chart-card" style="margin-bottom:28px;">
@@ -2049,6 +2063,37 @@ function updateBarCharts(filter) {
       ]
     },
     options: barOpts('°C')
+  });
+
+  // ---- REPOSIÇÃO / CONSUMO DE FLUIDO DE SELAGEM ----
+  const sumOrZero = arr => arr.reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
+  const totalRepoLA  = eqs.map(eq => +sumOrZero(DATA[eq].map(d => d.repo_fluido_la)).toFixed(1));
+  const totalRepoLOA = eqs.map(eq => +sumOrZero(DATA[eq].map(d => d.repo_fluido_loa)).toFixed(1));
+  const countRepo    = eqs.map(eq => DATA[eq].filter(d => d.repo_fluido_la != null || d.repo_fluido_loa != null).length);
+
+  if (charts.barRepoVol) charts.barRepoVol.destroy();
+  charts.barRepoVol = new Chart(document.getElementById('barRepoVol').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: eqs,
+      datasets: [
+        { label: 'Fluido LA',  data: totalRepoLA,  backgroundColor: '#e07a3a88', borderRadius: 6, borderSkipped: false, stack: 'repo' },
+        { label: 'Fluido LOA', data: totalRepoLOA, backgroundColor: '#7a8c5a88', borderRadius: 6, borderSkipped: false, stack: 'repo' }
+      ]
+    },
+    options: { ...barOpts('litros'), scales: { ...barOpts('litros').scales, x: { ...barOpts('litros').scales.x, stacked: true }, y: { ...barOpts('litros').scales.y, stacked: true } } }
+  });
+
+  if (charts.barRepoCount) charts.barRepoCount.destroy();
+  charts.barRepoCount = new Chart(document.getElementById('barRepoCount').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: eqs,
+      datasets: [
+        { label: 'Reposições', data: countRepo, backgroundColor: '#c47f2a88', borderRadius: 6, borderSkipped: false }
+      ]
+    },
+    options: { ...barOpts('eventos'), plugins: { legend: { display: false } } }
   });
 }
 
