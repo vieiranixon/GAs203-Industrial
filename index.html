@@ -1767,6 +1767,21 @@
       </select>
       <canvas id="lineChart" height="200"></canvas>
     </div>
+    <div class="chart-card">
+      <div class="chart-title">Consumo de Fluido de Selagem — Evolução Temporal</div>
+      <div class="chart-sub">Reposição LA vs LOA por equipamento (eventos)</div>
+      <select id="eq-select-line-consumo" onchange="updateLineChartConsumo()">
+        <option value="GA-203A">GA-203A</option>
+        <option value="GAT-203B">GAT-203B</option>
+        <option value="GAT-203C">GAT-203C</option>
+        <option value="GA-203D">GA-203D</option>
+        <option value="GA-203E">GA-203E</option>
+        <option value="GA-203F">GA-203F</option>
+        <option value="GAT-203G">GAT-203G</option>
+        <option value="GA-203S">GA-203S</option>
+      </select>
+      <canvas id="lineChartConsumo" height="200"></canvas>
+    </div>
   </div>
 
   <!-- CHARTS ROW 2 -->
@@ -2002,6 +2017,42 @@ function updateLineChartLA() {
 
 
 
+
+// ============================================================
+// LINE CHART CONSUMO (Reposição de Fluido de Selagem)
+// ============================================================
+function updateLineChartConsumo() {
+  const sel = document.getElementById('eq-select-line-consumo');
+  if (!sel) return;
+  const eq = sel.value;
+  const rows = DATA[eq].filter(d => d.repo_fluido_la != null || d.repo_fluido_loa != null);
+  const labels = rows.map(d => d.data.slice(5));
+  const rLa  = rows.map(d => d.repo_fluido_la  ?? 0);
+  const rLoa = rows.map(d => d.repo_fluido_loa ?? 0);
+
+  if (charts.lineConsumo) charts.lineConsumo.destroy();
+  const canvas = document.getElementById('lineChartConsumo');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  charts.lineConsumo = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Fluido LA',  data: rLa,  borderColor: COLORS[eq] || '#e07a3a', backgroundColor: (COLORS[eq] || '#e07a3a') + '22', tension: 0.35, pointRadius: 4, borderWidth: 2.5, fill: true },
+        { label: 'Fluido LOA', data: rLoa, borderColor: '#7a8c5a', backgroundColor: 'transparent', tension: 0.35, pointRadius: 3, borderWidth: 1.5, borderDash: [5,3] }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { font: { family: 'DM Sans', size: 11 }, color: '#6b5c4a' } } },
+      scales: {
+        x: { ticks: { font: { size: 10 }, color: '#a08c78', maxTicksLimit: 12 }, grid: { color: '#e2d9cf44' } },
+        y: { ticks: { font: { size: 11 }, color: '#6b5c4a' }, grid: { color: '#e2d9cf88' }, title: { display: true, text: 'litros', color: '#a08c78', font: { size: 11 } } }
+      }
+    }
+  });
+}
 
 // ============================================================
 // BAR CHARTS
@@ -2277,9 +2328,11 @@ function filterEquip(eq, btn) {
   renderInsights(eq);
   const sel = document.getElementById('eq-select-line');
   const selLA = document.getElementById('eq-select-line-la');
-  if (sel && selLA && eq !== 'all' && DATA[eq]) { sel.value = eq; selLA.value = eq; }
+  const selConsumo = document.getElementById('eq-select-line-consumo');
+  if (sel && selLA && eq !== 'all' && DATA[eq]) { sel.value = eq; selLA.value = eq; if (selConsumo) selConsumo.value = eq; }
   try { updateLineChartLA(); } catch(e) {}
   try { updateLineChart(); } catch(e) {}
+  try { updateLineChartConsumo(); } catch(e) {}
 }
 
 // ============================================================
@@ -2841,10 +2894,13 @@ function refreshAll() {
   const selLA = document.getElementById('eq-select-line-la');
   if (sel) sel.innerHTML = Object.keys(DATA).map(eq => `<option value="${eq}">${eq}</option>`).join('');
   if (selLA && sel) selLA.innerHTML = sel.innerHTML;
+  const selConsumo = document.getElementById('eq-select-line-consumo');
+  if (selConsumo && sel) selConsumo.innerHTML = sel.innerHTML;
 
   calcKPIs('all');
   updateLineChartLA();
   updateLineChart();
+  try { updateLineChartConsumo(); } catch(e) {}
   updateBarCharts('all');
   renderEquipCards('all');
   renderInsights('all');
@@ -2887,12 +2943,15 @@ window.addEventListener('DOMContentLoaded', () => {
   const selLA = document.getElementById('eq-select-line-la');
   if (sel) sel.innerHTML = Object.keys(DATA).map(eq => `<option value="${eq}">${eq}</option>`).join('');
   if (selLA && sel) selLA.innerHTML = sel.innerHTML;
+  const selConsumo = document.getElementById('eq-select-line-consumo');
+  if (selConsumo && sel) selConsumo.innerHTML = sel.innerHTML;
 
   renderSemaforo();
   injectHealthScores();
   calcKPIs('all');
   try { updateLineChartLA(); } catch(e) {}
   try { updateLineChart(); } catch(e) {}
+  try { updateLineChartConsumo(); } catch(e) {}
   try { updateBarCharts('all'); } catch(e) {}
   renderEquipCards('all');
   renderInsights('all');
@@ -2954,6 +3013,7 @@ function showPage(name) {
     calcKPIs(activeFilter || 'all');
     updateLineChartLA();
     updateLineChart();
+    try { updateLineChartConsumo(); } catch(e) {}
     updateBarCharts(activeFilter || 'all');
     renderEquipCards(activeFilter || 'all');
     renderInsights(activeFilter || 'all');
@@ -3404,6 +3464,7 @@ let _dataJustImported = false;
       calcKPIs('all');
       updateLineChartLA();
       updateLineChart();
+      try { updateLineChartConsumo(); } catch(e) {}
       updateBarCharts('all');
       renderEquipCards('all');
       renderInsights('all');
@@ -3445,6 +3506,7 @@ let _dataJustImported = false;
               calcKPIs(activeFilter || 'all');
               try { updateLineChartLA(); } catch(e) {}
               try { updateLineChart(); } catch(e) {}
+              try { updateLineChartConsumo(); } catch(e) {}
               try { updateBarCharts(activeFilter || 'all'); } catch(e) {}
               renderEquipCards(activeFilter || 'all');
               renderInsights(activeFilter || 'all');
@@ -3516,6 +3578,7 @@ async function atualizarManual() {
       calcKPIs(activeFilter || 'all');
       try { updateLineChartLA(); } catch(e) {}
       try { updateLineChart(); } catch(e) {}
+      try { updateLineChartConsumo(); } catch(e) {}
       try { updateBarCharts(activeFilter || 'all'); } catch(e) {}
       renderEquipCards(activeFilter || 'all');
       renderInsights(activeFilter || 'all');
