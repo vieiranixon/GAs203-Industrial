@@ -1767,21 +1767,6 @@
       </select>
       <canvas id="lineChart" height="200"></canvas>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">Consumo de Fluido de Selagem — Evolução Temporal</div>
-      <div class="chart-sub">Reposição LA vs LOA por equipamento (eventos)</div>
-      <select id="eq-select-line-consumo" onchange="updateLineChartConsumo()">
-        <option value="GA-203A">GA-203A</option>
-        <option value="GAT-203B">GAT-203B</option>
-        <option value="GAT-203C">GAT-203C</option>
-        <option value="GA-203D">GA-203D</option>
-        <option value="GA-203E">GA-203E</option>
-        <option value="GA-203F">GA-203F</option>
-        <option value="GAT-203G">GAT-203G</option>
-        <option value="GA-203S">GA-203S</option>
-      </select>
-      <canvas id="lineChartConsumo" height="200"></canvas>
-    </div>
   </div>
 
   <!-- CHARTS ROW 2 -->
@@ -1804,7 +1789,7 @@
   </div>
 
   <!-- REPOSIÇÃO/CONSUMO DE FLUIDO DE SELAGEM -->
-  <div class="charts-row" style="grid-template-columns: 2fr 1fr;">
+  <div class="charts-row-3">
     <div class="chart-card">
       <div class="chart-title">Reposição de Fluido de Selagem</div>
       <div class="chart-sub">Volume total repostado (L) por equipamento — LA vs LOA</div>
@@ -1814,6 +1799,21 @@
       <div class="chart-title">Nº de Reposições</div>
       <div class="chart-sub">Eventos de reposição por equipamento</div>
       <canvas id="barRepoCount" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Consumo de Fluido de Selagem — Evolução Temporal</div>
+      <div class="chart-sub">Reposição LA vs LOA por equipamento (eventos)</div>
+      <select id="eq-select-line-consumo" onchange="updateLineChartConsumo()">
+        <option value="GA-203A">GA-203A</option>
+        <option value="GAT-203B">GAT-203B</option>
+        <option value="GAT-203C">GAT-203C</option>
+        <option value="GA-203D">GA-203D</option>
+        <option value="GA-203E">GA-203E</option>
+        <option value="GA-203F">GA-203F</option>
+        <option value="GAT-203G">GAT-203G</option>
+        <option value="GA-203S">GA-203S</option>
+      </select>
+      <canvas id="lineChartConsumo" height="200"></canvas>
     </div>
   </div>
 
@@ -2500,6 +2500,10 @@ function buildDataFromRows(raw) {
           data: dateStr,
           pressao_succao:  sf(row[1]),
           pressao_descarga: sf(row[2]),
+          nivel_selo_la:    sfText(row[3]),
+          nivel_selo_loa:   sfText(row[4]),
+          repo_fluido_la:   sf(row[5]),
+          repo_fluido_loa:  sf(row[6]),
           pressao_pote_la:  sf(row[7]),
           pressao_pote_loa: sf(row[8]),
           temp_selo_la:     sf(row[9]),
