@@ -319,7 +319,7 @@
 
   .charts-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 24px;
     margin-bottom: 28px;
   }
@@ -328,7 +328,7 @@
   }
   .charts-row-3 {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
     gap: 24px;
     margin-bottom: 28px;
   }
@@ -339,8 +339,10 @@
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
     position: relative;
+    min-width: 0;
     transition: box-shadow .2s;
   }
+  .chart-card canvas { max-width: 100%; }
   .chart-zoom-btn {
     position: absolute;
     top: 16px;
@@ -3099,6 +3101,10 @@ function _chartZoomBackdrop() {
 }
 
 function _resizeChartsIn(card) {
+  card.querySelectorAll('canvas').forEach(cv => {
+    const chart = Chart.getChart(cv);
+    if (chart) { cv.style.width = ''; cv.style.height = ''; }
+  });
   requestAnimationFrame(() => {
     card.querySelectorAll('canvas').forEach(cv => {
       const chart = Chart.getChart(cv);
