@@ -338,6 +338,57 @@
     padding: 28px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
+    position: relative;
+    transition: box-shadow .2s;
+  }
+  .chart-zoom-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2, #f5f1eb);
+    color: var(--text3, #a08c78);
+    font-size: 15px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .15s, background .15s, color .15s;
+    z-index: 5;
+  }
+  .chart-card:hover .chart-zoom-btn { opacity: 1; }
+  .chart-zoom-btn:hover { background: #c47f2a; color: #fff; border-color: #c47f2a; }
+  .chart-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 22, 14, 0.55);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .chart-modal-backdrop.active { opacity: 1; pointer-events: all; }
+  .chart-card.chart-zoomed {
+    width: min(1100px, 92vw);
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 70px rgba(0,0,0,.4);
+    z-index: 10000;
+  }
+  .chart-card.chart-zoomed .chart-zoom-btn { opacity: 1; }
+  .chart-card.chart-zoomed canvas { min-height: 420px; }
+  @media (max-width: 640px) {
+    .chart-zoom-btn { opacity: 1; }
+    .chart-card.chart-zoomed { width: 96vw; padding: 20px; }
   }
   .chart-title {
     font-size: 14px;
@@ -3025,7 +3076,83 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Busca a planilha mais recente (Google Sheets como fonte primária, GitHub como reserva) — não bloqueia o render inicial
   carregarDadosAutomaticamente();
+
+  initChartZoom();
 });
+
+// ============================================================
+// ZOOM DE GRÁFICOS — clique no ícone ⤢ de qualquer card para
+// expandir o gráfico no centro da tela, em tamanho maior.
+// ============================================================
+let _chartZoomState = null;
+
+function _chartZoomBackdrop() {
+  let bd = document.getElementById('chart-zoom-backdrop');
+  if (!bd) {
+    bd = document.createElement('div');
+    bd.id = 'chart-zoom-backdrop';
+    bd.className = 'chart-modal-backdrop';
+    bd.addEventListener('click', (e) => { if (e.target === bd) closeChartZoom(); });
+    document.body.appendChild(bd);
+  }
+  return bd;
+}
+
+function _resizeChartsIn(card) {
+  requestAnimationFrame(() => {
+    card.querySelectorAll('canvas').forEach(cv => {
+      const chart = Chart.getChart(cv);
+      if (chart) chart.resize();
+    });
+  });
+}
+
+function openChartZoom(card) {
+  if (_chartZoomState) return;
+  const backdrop = _chartZoomBackdrop();
+  _chartZoomState = { card, parent: card.parentNode, nextSibling: card.nextSibling };
+  backdrop.appendChild(card);
+  card.classList.add('chart-zoomed');
+  backdrop.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  const btn = card.querySelector('.chart-zoom-btn');
+  if (btn) { btn.innerHTML = '✕'; btn.title = 'Fechar'; }
+  _resizeChartsIn(card);
+}
+
+function closeChartZoom() {
+  if (!_chartZoomState) return;
+  const { card, parent, nextSibling } = _chartZoomState;
+  card.classList.remove('chart-zoomed');
+  if (nextSibling) parent.insertBefore(card, nextSibling); else parent.appendChild(card);
+  const backdrop = document.getElementById('chart-zoom-backdrop');
+  if (backdrop) backdrop.classList.remove('active');
+  document.body.style.overflow = '';
+  const btn = card.querySelector('.chart-zoom-btn');
+  if (btn) { btn.innerHTML = '⤢'; btn.title = 'Expandir gráfico'; }
+  _resizeChartsIn(card);
+  _chartZoomState = null;
+}
+
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeChartZoom(); });
+
+function initChartZoom() {
+  document.querySelectorAll('.chart-card').forEach(card => {
+    if (!card.querySelector('canvas')) return; // só cards com gráfico
+    if (card.querySelector('.chart-zoom-btn')) return; // evita duplicar
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chart-zoom-btn';
+    btn.innerHTML = '⤢';
+    btn.title = 'Expandir gráfico';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (card.classList.contains('chart-zoomed')) closeChartZoom();
+      else openChartZoom(card);
+    });
+    card.insertBefore(btn, card.firstChild);
+  });
+}
 
 function _buildDynamicSelects() {
   // Populate equipment selects dynamically from DATA keys
