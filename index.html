@@ -1639,7 +1639,7 @@
   <!-- THRESHOLDS -->
   <div class="thresholds-panel">
     <div class="thresholds-title">⚙️ Limites de Alerta Configuráveis</div>
-    <div class="thresholds-grid" style="grid-template-columns: repeat(4,1fr);">
+    <div class="thresholds-grid" style="grid-template-columns: repeat(5,1fr);">
       <div class="threshold-item">
         <label>Pressão Pote Selagem LA / LOA (kgf/cm²)</label>
         <div class="threshold-row">
@@ -1674,6 +1674,15 @@
           <input class="threshold-input" id="th-man-warn" type="number" value="70" min="30" max="150">
           <span class="tag-critico" style="margin-left:8px;">Crítico</span>
           <input class="threshold-input" id="th-man-crit" type="number" value="90" min="30" max="150">
+        </div>
+      </div>
+      <div class="threshold-item">
+        <label>Consumo Selo LA / LOA (L/dia)</label>
+        <div class="threshold-row">
+          <span class="tag-atencao">Atenção</span>
+          <input class="threshold-input" id="th-cons-warn" type="number" value="5" min="0" max="100" step="0.5">
+          <span class="tag-critico" style="margin-left:8px;">Crítico</span>
+          <input class="threshold-input" id="th-cons-crit" type="number" value="10" min="0" max="100" step="0.5">
         </div>
       </div>
     </div>
@@ -2781,6 +2790,8 @@ function calcHealthScore(eq) {
   pen(last.temp_mancal_loa, THRESHOLDS.man_warn, THRESHOLDS.man_crit);
   penLow(last.pressao_pote_la,  THRESHOLDS.pote_la_warn,  THRESHOLDS.pote_la_crit);
   penLow(last.pressao_pote_loa, THRESHOLDS.pote_loa_warn, THRESHOLDS.pote_loa_crit);
+  pen(calcConsumoDiario(eq, 'repo_fluido_la'),  THRESHOLDS.cons_la_warn,  THRESHOLDS.cons_la_crit);
+  pen(calcConsumoDiario(eq, 'repo_fluido_loa'), THRESHOLDS.cons_loa_warn, THRESHOLDS.cons_loa_crit);
 
   var score = Math.max(0, Math.min(100, 100 - penalty));
   var color = score >= 80 ? '#16A34A' : score >= 50 ? '#F97316' : '#DC2626';
@@ -3195,7 +3206,9 @@ let THRESHOLDS = {
   la_warn: 140,  la_crit: 150,
   man_warn: 70,  man_crit: 90,
   pote_la_warn: 4.0,  pote_la_crit: 3.0,
-  pote_loa_warn: 4.0, pote_loa_crit: 3.0
+  pote_loa_warn: 4.0, pote_loa_crit: 3.0,
+  cons_la_warn: 5,  cons_la_crit: 10,
+  cons_loa_warn: 5, cons_loa_crit: 10
 };
 
 // ---------- NAVEGAÇÃO ----------
@@ -3233,8 +3246,32 @@ function applyThresholds() {
   THRESHOLDS.pote_la_crit  = _poteCrit;
   THRESHOLDS.pote_loa_warn = _poteWarn;
   THRESHOLDS.pote_loa_crit = _poteCrit;
+  const _consWarn = +document.getElementById('th-cons-warn').value || 5;
+  const _consCrit = +document.getElementById('th-cons-crit').value || 10;
+  THRESHOLDS.cons_la_warn  = _consWarn;
+  THRESHOLDS.cons_la_crit  = _consCrit;
+  THRESHOLDS.cons_loa_warn = _consWarn;
+  THRESHOLDS.cons_loa_crit = _consCrit;
   renderSemaforo();
   injectHealthScores();
+}
+
+// ---------- CONSUMO DIÁRIO (L/dia, média móvel dos últimos 30 dias) ----------
+function calcConsumoDiario(eq, field) {
+  var rows = DATA[eq];
+  if (!rows || !rows.length) return null;
+  var comData = rows.filter(function(d) { return d.data; });
+  if (!comData.length) return null;
+  var ultimaData = new Date(comData[comData.length - 1].data);
+  var janela = new Date(ultimaData);
+  janela.setDate(janela.getDate() - 30);
+  var soma = 0;
+  comData.forEach(function(d) {
+    if (d[field] == null) return;
+    var dt = new Date(d.data);
+    if (dt >= janela && dt <= ultimaData) soma += d[field];
+  });
+  return +(soma / 30).toFixed(2);
 }
 
 // ---------- CLASSIFICAR EQUIPAMENTO ----------
@@ -3278,6 +3315,17 @@ function classifyEquip(eq) {
   const _poteLOA = (_lastRow && _lastRow.pressao_pote_loa != null) ? _lastRow.pressao_pote_loa : last.pressao_pote_loa;
   checkLow(_poteLA,  THRESHOLDS.pote_la_warn,  THRESHOLDS.pote_la_crit,  'Pote LA');
   checkLow(_poteLOA, THRESHOLDS.pote_loa_warn, THRESHOLDS.pote_loa_crit, 'Pote LOA');
+
+  // Consumo de fluido: L/dia (média móvel 30 dias) — maior é pior
+  const checkConsumo = (val, warn, crit, label) => {
+    if (val == null) return;
+    if (val >= crit) { motivos.push(label + ' ' + val + ' L/dia ≥ ' + crit + ' L/dia (CRÍTICO)'); if (nivel < 2) nivel = 2; }
+    else if (val >= warn) { motivos.push(label + ' ' + val + ' L/dia ≥ ' + warn + ' L/dia (atenção)'); if (nivel < 1) nivel = 1; }
+  };
+  const _consLA  = calcConsumoDiario(eq, 'repo_fluido_la');
+  const _consLOA = calcConsumoDiario(eq, 'repo_fluido_loa');
+  checkConsumo(_consLA,  THRESHOLDS.cons_la_warn,  THRESHOLDS.cons_la_crit,  'Consumo Selo LA');
+  checkConsumo(_consLOA, THRESHOLDS.cons_loa_warn, THRESHOLDS.cons_loa_crit, 'Consumo Selo LOA');
 
   if (estado === 'stand-by' && nivel === 0) return { cls: 'cinza', nivel: 0, motivos: ['Stand-by'], last, lastRow: rows[rows.length-1] };
 
