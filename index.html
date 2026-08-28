@@ -1677,7 +1677,7 @@
         </div>
       </div>
       <div class="threshold-item">
-        <label>Consumo Selo LA / LOA (L/h)</label>
+        <label>Consumo Selo LA / LOA (L/dia)</label>
         <div class="threshold-row">
           <span class="tag-atencao">Atenção</span>
           <input class="threshold-input" id="th-cons-warn" type="number" value="5" min="0" max="100" step="0.5">
@@ -2790,8 +2790,8 @@ function calcHealthScore(eq) {
   pen(last.temp_mancal_loa, THRESHOLDS.man_warn, THRESHOLDS.man_crit);
   penLow(last.pressao_pote_la,  THRESHOLDS.pote_la_warn,  THRESHOLDS.pote_la_crit);
   penLow(last.pressao_pote_loa, THRESHOLDS.pote_loa_warn, THRESHOLDS.pote_loa_crit);
-  pen(calcConsumoHorario(eq, 'repo_fluido_la'),  THRESHOLDS.cons_la_warn,  THRESHOLDS.cons_la_crit);
-  pen(calcConsumoHorario(eq, 'repo_fluido_loa'), THRESHOLDS.cons_loa_warn, THRESHOLDS.cons_loa_crit);
+  pen(calcConsumoDiario(eq, 'repo_fluido_la'),  THRESHOLDS.cons_la_warn,  THRESHOLDS.cons_la_crit);
+  pen(calcConsumoDiario(eq, 'repo_fluido_loa'), THRESHOLDS.cons_loa_warn, THRESHOLDS.cons_loa_crit);
 
   var score = Math.max(0, Math.min(100, 100 - penalty));
   var color = score >= 80 ? '#16A34A' : score >= 50 ? '#F97316' : '#DC2626';
@@ -3256,22 +3256,12 @@ function applyThresholds() {
   injectHealthScores();
 }
 
-// ---------- CONSUMO (L/h) — volume do último evento de reposição ÷ horas decorridas desde a leitura anterior ----------
-function calcConsumoHorario(eq, field) {
+// ---------- CONSUMO (L) — volume do lançamento de reposição mais recente ----------
+function calcConsumoDiario(eq, field) {
   var rows = DATA[eq];
   if (!rows || !rows.length) return null;
   for (var i = rows.length - 1; i >= 0; i--) {
-    if (rows[i][field] != null) {
-      var vol = rows[i][field];
-      var horas = 24; // padrão (1 leitura/dia) caso não haja leitura anterior válida
-      if (i > 0 && rows[i - 1].data && rows[i].data) {
-        var dt1 = new Date(rows[i - 1].data);
-        var dt2 = new Date(rows[i].data);
-        var diffH = (dt2 - dt1) / 3600000;
-        if (diffH > 0) horas = diffH;
-      }
-      return +(vol / horas).toFixed(3);
-    }
+    if (rows[i][field] != null) return rows[i][field];
   }
   return null;
 }
@@ -3318,14 +3308,14 @@ function classifyEquip(eq) {
   checkLow(_poteLA,  THRESHOLDS.pote_la_warn,  THRESHOLDS.pote_la_crit,  'Pote LA');
   checkLow(_poteLOA, THRESHOLDS.pote_loa_warn, THRESHOLDS.pote_loa_crit, 'Pote LOA');
 
-  // Consumo de fluido: L/h (evento mais recente ÷ horas desde a leitura anterior) — maior é pior
+  // Consumo de fluido: lançamento do dia (L) — maior é pior
   const checkConsumo = (val, warn, crit, label) => {
     if (val == null) return;
-    if (val >= crit) { motivos.push(label + ' ' + val + ' L/h ≥ ' + crit + ' L/h (CRÍTICO)'); if (nivel < 2) nivel = 2; }
-    else if (val >= warn) { motivos.push(label + ' ' + val + ' L/h ≥ ' + warn + ' L/h (atenção)'); if (nivel < 1) nivel = 1; }
+    if (val >= crit) { motivos.push(label + ' ' + val + ' L ≥ ' + crit + ' L (CRÍTICO)'); if (nivel < 2) nivel = 2; }
+    else if (val >= warn) { motivos.push(label + ' ' + val + ' L ≥ ' + warn + ' L (atenção)'); if (nivel < 1) nivel = 1; }
   };
-  const _consLA  = calcConsumoHorario(eq, 'repo_fluido_la');
-  const _consLOA = calcConsumoHorario(eq, 'repo_fluido_loa');
+  const _consLA  = calcConsumoDiario(eq, 'repo_fluido_la');
+  const _consLOA = calcConsumoDiario(eq, 'repo_fluido_loa');
   checkConsumo(_consLA,  THRESHOLDS.cons_la_warn,  THRESHOLDS.cons_la_crit,  'Consumo Selo LA');
   checkConsumo(_consLOA, THRESHOLDS.cons_loa_warn, THRESHOLDS.cons_loa_crit, 'Consumo Selo LOA');
 
