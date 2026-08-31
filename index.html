@@ -3256,14 +3256,12 @@ function applyThresholds() {
   injectHealthScores();
 }
 
-// ---------- CONSUMO (L) — volume do lançamento de reposição mais recente ----------
+// ---------- CONSUMO (L) — volume do lançamento na leitura mais recente (dia atual) ----------
 function calcConsumoDiario(eq, field) {
   var rows = DATA[eq];
   if (!rows || !rows.length) return null;
-  for (var i = rows.length - 1; i >= 0; i--) {
-    if (rows[i][field] != null) return rows[i][field];
-  }
-  return null;
+  var ultima = rows[rows.length - 1];
+  return ultima[field] != null ? ultima[field] : null;
 }
 
 // ---------- CLASSIFICAR EQUIPAMENTO ----------
@@ -3353,11 +3351,11 @@ function renderSemaforo() {
     const { cls: rawCls, nivel, motivos, last, lastRow } = classifyEquip(eq);
     // Estado real = da última leitura (lastRow), não da última com temperatura
     const estado = lastRow ? lastRow.estado : (last ? last.estado : DATA[eq][DATA[eq].length - 1].estado);
-    // Cor do cartão: Manutenção = cinza, Stand-by = azul, senão baseado no Health Score
+    // Cor do cartão: Manutenção = cinza, Stand-by = azul, senão nível REAL por parâmetro
+    // (qualquer item em nível crítico deve deixar o card vermelho, mesmo que o Health Score agregado ainda esteja em 50-79)
     const cls = estado === 'manutenção' ? 'manutencao'
       : estado === 'stand-by' ? 'cinza'
-      : rawCls === 'cinza' ? 'cinza'
-      : (hs.score >= 80 ? 'verde' : hs.score >= 50 ? 'amarelo' : 'vermelho');
+      : rawCls;
     const icone = cls === 'verde' ? '✅' : cls === 'amarelo' ? '⚠️' : cls === 'manutencao' ? '🔧' : cls === 'cinza' ? '⏸' : '🔴';
     const statusLabel = cls === 'verde' ? 'Normal' : cls === 'amarelo' ? 'Atenção' : cls === 'manutencao' ? 'Manutenção' : cls === 'cinza' ? 'Stand-by' : 'CRÍTICO';
 
@@ -3862,8 +3860,8 @@ function gerarPDF() {
   const ranked = eqs.map(eq => {
     const hs = calcHealthScore(eq);
     const { cls: rawCls, nivel, motivos, last, lastRow } = classifyEquip(eq);
-    const cls = rawCls === 'cinza' ? 'cinza' : (hs.score >= 80 ? 'verde' : hs.score >= 50 ? 'amarelo' : 'vermelho');
     const estado = DATA[eq][DATA[eq].length - 1].estado;
+    const cls = estado === 'manutenção' ? 'manutencao' : estado === 'stand-by' ? 'cinza' : rawCls;
     return { eq, hs, cls, nivel, motivos, last, estado };
   }).sort((a, b) => a.hs.score - b.hs.score);
 
@@ -3871,7 +3869,7 @@ function gerarPDF() {
   const criticos  = ranked.filter(r => r.cls === 'vermelho').length;
   const atencao   = ranked.filter(r => r.cls === 'amarelo').length;
   const normais   = ranked.filter(r => r.cls === 'verde').length;
-  const inativos  = ranked.filter(r => r.cls === 'cinza').length;
+  const inativos  = ranked.filter(r => r.cls === 'cinza' || r.cls === 'manutencao').length;
   const avgScore  = Math.round(ranked.reduce((s, r) => s + r.hs.score, 0) / ranked.length);
   const piorEq    = ranked[0];
   const melhorEq  = ranked[ranked.length - 1];
@@ -3935,9 +3933,9 @@ function gerarPDF() {
         ${ranked.map(({ eq, hs, cls, motivos, last, estado }, i) => {
           const rankColor = i === 0 ? '#DC2626' : i === 1 ? '#F97316' : i <= 3 ? '#F97316' : '#16A34A';
           const rowBg = i % 2 === 0 ? '#fff' : '#faf7f4';
-          const statusLabel = cls === 'verde' ? 'Normal' : cls === 'amarelo' ? 'Atenção' : cls === 'cinza' ? 'Stand-by' : 'CRÍTICO';
-          const statusBg = cls === 'verde' ? '#dcfce7' : cls === 'amarelo' ? '#ffedd5' : cls === 'cinza' ? '#dbeafe' : '#fee2e2';
-          const statusCol = cls === 'verde' ? '#16A34A' : cls === 'amarelo' ? '#F97316' : cls === 'cinza' ? '#2563EB' : '#DC2626';
+          const statusLabel = cls === 'verde' ? 'Normal' : cls === 'amarelo' ? 'Atenção' : cls === 'cinza' ? 'Stand-by' : cls === 'manutencao' ? 'Manutenção' : 'CRÍTICO';
+          const statusBg = cls === 'verde' ? '#dcfce7' : cls === 'amarelo' ? '#ffedd5' : cls === 'cinza' ? '#dbeafe' : cls === 'manutencao' ? '#f3f4f6' : '#fee2e2';
+          const statusCol = cls === 'verde' ? '#16A34A' : cls === 'amarelo' ? '#F97316' : cls === 'cinza' ? '#2563EB' : cls === 'manutencao' ? '#6B7280' : '#DC2626';
           const estadoLabel = estado === 'operação' ? '⚙️ Op.' : estado === 'manutenção' ? '🔧 Man.' : '⏸ SB';
           return `<tr style="background:${rowBg}">
             <td style="padding:6px 8px;text-align:center;font-weight:900;color:${rankColor}">#${i+1}</td>
