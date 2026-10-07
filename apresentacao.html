@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apresentação GAs-203</title>
+<link rel="icon" href="favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!--
+  ============================================================
+  APRESENTAÇÃO GAs-203 — página independente do dashboard.
+  Não altera o index.html: apenas LÊ a mesma planilha do Google Sheets
+  (com reserva no .xlsx do GitHub e nos dados embutidos do index.html).
+
+  Atalhos:  ← →  / Espaço / PageUp PageDown  navegar
+            F  tela cheia      M  alternar Gerencial/Técnico
+            R  recarregar dados    P  exportar PDF (imprimir)
+  URL:      apresentacao.html?modo=tecnico   (padrão: gerencial)
+  ============================================================
+-->
+<style>
+  :root {
+    --bg: #f5f1eb; --surface: #ffffff; --surface2: #faf7f2;
+    --caramel: #c47f2a; --brown: #6b3e1f; --olive: #7a8c5a;
+    --text: #2a1f14; --text2: #6b5c4a; --text3: #a08c78; --border: #e2d9cf;
+    --ok: #16A34A; --warn: #F97316; --crit: #DC2626; --stby: #2563EB; --mnt: #6B7280;
+    --stage: #1c140d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--stage); font-family: 'DM Sans', sans-serif; color: var(--text); overflow: hidden; }
+
+  /* ---------- Palco: slides de 1600x900 escalados para a tela ---------- */
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #deck { position: relative; width: 1600px; height: 900px; transform-origin: center center; flex-shrink: 0; }
+  .slide {
+    position: absolute; inset: 0; background: var(--bg); border-radius: 6px; overflow: hidden;
+    padding: 64px 80px 56px; display: flex; flex-direction: column;
+    opacity: 0; visibility: hidden; transition: opacity .35s ease;
+  }
+  .slide.active { opacity: 1; visibility: visible; }
+
+  .slide-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+  .kicker { font-size: 18px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--caramel); margin-bottom: 8px; }
+  h1, h2 { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--brown); line-height: 1.1; }
+  h2 { font-size: 52px; }
+  .slide-foot {
+    position: absolute; left: 80px; right: 80px; bottom: 22px; display: flex; justify-content: space-between;
+    font-size: 15px; color: var(--text3);
+  }
+  .body { flex: 1; min-height: 0; display: flex; gap: 32px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 28px 32px; box-shadow: 0 4px 24px rgba(107,62,31,.06); }
+  .muted { color: var(--text2); }
+
+  /* ---------- Capa ---------- */
+  .cover { background: linear-gradient(135deg, #2a1f14 0%, #6b3e1f 100%); color: #fff; justify-content: center; }
+  .cover h1 { color: #fff; font-size: 104px; margin: 12px 0 20px; }
+  .cover .kicker { color: #e8a84a; font-size: 22px; }
+  .cover .sub { font-size: 32px; color: #f1e3cf; font-weight: 300; }
+  .cover .meta { margin-top: 64px; display: flex; gap: 56px; font-size: 20px; color: #d9c6ae; }
+  .cover .meta b { display: block; font-size: 30px; color: #fff; font-weight: 600; margin-top: 6px; }
+  .cover .slide-foot { color: #b59a7c; }
+  .mode-pill { display: inline-block; padding: 8px 18px; border-radius: 999px; border: 1px solid #e8a84a; color: #e8a84a; font-size: 18px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+
+  /* ---------- KPIs ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .kpi { padding: 28px 30px; }
+  .kpi .lbl { font-size: 19px; color: var(--text2); font-weight: 500; }
+  .kpi .val { font-size: 72px; font-weight: 700; line-height: 1; margin-top: 14px; font-variant-numeric: tabular-nums; }
+  .kpi .val small { font-size: 30px; font-weight: 500; color: var(--text3); }
+  .kpi .note { font-size: 17px; color: var(--text3); margin-top: 10px; }
+  .headline { font-size: 34px; line-height: 1.35; color: var(--text); max-width: 1300px; }
+  .headline b { color: var(--brown); }
+
+  /* ---------- Status ---------- */
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-size: 17px; font-weight: 600; color: #fff; white-space: nowrap; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .eq-tile { border-left: 8px solid; padding: 18px 22px; }
+  .eq-tile .n { font-size: 26px; font-weight: 700; }
+  .eq-tile .s { font-size: 17px; margin-top: 4px; font-weight: 600; }
+  .eq-tile .hs { font-size: 16px; color: var(--text3); margin-top: 2px; }
+
+  /* ---------- Ranking ---------- */
+  .rank-row { display: grid; grid-template-columns: 160px 1fr 90px 190px; align-items: center; gap: 22px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .rank-row:last-child { border-bottom: none; }
+  .rank-row .n { font-size: 24px; font-weight: 700; }
+  .bar-track { height: 26px; background: #efe8de; border-radius: 13px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 13px; }
+  .rank-row .sc { font-size: 30px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Atenção ---------- */
+  .attn { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; align-content: start; width: 100%; }
+  .attn .card { border-left: 8px solid; padding: 22px 28px; }
+  .attn h3 { font-size: 28px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .attn ul { margin: 14px 0 0 22px; font-size: 19px; line-height: 1.5; }
+  .attn .obs { margin-top: 12px; font-size: 17px; color: var(--text2); font-style: italic; }
+  .empty { margin: auto; text-align: center; font-size: 34px; color: var(--ok); font-weight: 600; }
+
+  /* ---------- Tabelas ---------- */
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-size: 15px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; padding: 10px 12px; border-bottom: 2px solid var(--border); }
+  td { padding: 11px 12px; font-size: 20px; border-bottom: 1px solid var(--border); }
+  td.num, th.num { text-align: right; }
+  .delta { font-size: 15px; margin-left: 6px; font-weight: 600; }
+  .up { color: var(--crit); } .down { color: var(--ok); } .flat { color: var(--text3); }
+  .up.good { color: var(--ok); } .down.bad { color: var(--crit); }
+
+  .chart-box { position: relative; flex: 1; min-height: 0; }
+  .eq-side { width: 560px; flex-shrink: 0; display: flex; flex-direction: column; gap: 18px; }
+  .eq-side td { font-size: 18px; padding: 8px 10px; }
+  .big-score { font-size: 84px; font-weight: 700; line-height: .9; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Controles ---------- */
+  #controls {
+    position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 10;
+    display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 14px;
+    background: rgba(28,20,13,.88); color: #f1e3cf; font-size: 14px; backdrop-filter: blur(6px);
+    transition: opacity .3s; box-shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  #controls.hidden { opacity: 0; pointer-events: none; }
+  #controls button {
+    background: transparent; color: inherit; border: 1px solid rgba(241,227,207,.25); border-radius: 9px;
+    padding: 8px 12px; font: inherit; cursor: pointer; white-space: nowrap;
+  }
+  #controls button:hover { background: rgba(241,227,207,.12); }
+  #controls button.on { background: #c47f2a; border-color: #c47f2a; color: #fff; }
+  #counter { min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
+  #sync { font-size: 13px; color: #b59a7c; padding: 0 6px; white-space: nowrap; }
+  .seg { display: flex; }
+  .seg button:first-child { border-radius: 9px 0 0 9px; }
+  .seg button:last-child { border-radius: 0 9px 9px 0; border-left: none; }
+  #progress { position: fixed; left: 0; top: 0; height: 4px; background: #c47f2a; transition: width .3s; z-index: 10; }
+  #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #f1e3cf; font-size: 20px; z-index: 20; background: var(--stage); }
+  @media (max-width: 720px) {
+    #controls { gap: 4px; padding: 6px; font-size: 12px; bottom: 8px; }
+    #controls button { padding: 6px 8px; }
+    #sync, .hide-sm { display: none; }
+  }
+
+  /* ---------- Impressão / PDF: 1 slide por página ---------- */
+  @page { size: 1600px 900px; margin: 0; }
+  @media print {
+    html, body { height: auto; overflow: visible; background: #fff; }
+    #controls, #progress, #loading { display: none !important; }
+    #stage { position: static; display: block; }
+    #deck { transform: none !important; width: 1600px; height: auto; }
+    .slide { position: relative; opacity: 1; visibility: visible; width: 1600px; height: 900px; border-radius: 0;
+             page-break-after: always; break-after: page; transition: none; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div id="loading">Carregando dados da planilha…</div>
+<div id="stage"><div id="deck"></div></div>
+
+<div id="controls">
+  <button onclick="go(-1)" title="Anterior (←)">◀</button>
+  <span id="counter">1 / 1</span>
+  <button onclick="go(1)" title="Próximo (→)">▶</button>
+  <div class="seg">
+    <button id="btn-ger" onclick="setMode('gerencial')" title="Visão gerencial (M)">Gerencial</button>
+    <button id="btn-tec" onclick="setMode('tecnico')" title="Visão técnica (M)">Técnico</button>
+  </div>
+  <button onclick="loadData(true)" title="Recarregar dados (R)">⟳</button>
+  <button class="hide-sm" onclick="toggleFS()" title="Tela cheia (F)">⛶</button>
+  <button class="hide-sm" onclick="window.print()" title="Exportar PDF (P)">PDF</button>
+  <a href="index.html" style="color:inherit"><button class="hide-sm" title="Voltar ao dashboard">Dashboard</button></a>
+  <span id="sync"></span>
+</div>
+
+<script>
+// ============================================================
+// FONTES DE DADOS (mesmas do dashboard)
+// ============================================================
+const GOOGLE_SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRhxUqTIC94-AYVia7uIx4L1v4eg_FPBJ5ipkWyLlovJyeY20kIcyqPT2ecDYmk2uduRMXSxeMp6QD/pub?gid=725262246&single=true&output=csv';
+const GITHUB_XLSX_URLS = [
+  'https://raw.githubusercontent.com/vieiranixon/GAs203-Industrial/main/dados_ga203.xlsx',
+  'https://raw.githubusercontent.com/vieiranixon/GAs203-Industrial/main/dados/dados_ga203.xlsx'
+];
+const AUTO_REFRESH_MS = 5 * 60 * 1000;   // recarrega a planilha a cada 5 min
+
+// Mesmos limites padrão do dashboard (index.html → THRESHOLDS)
+const TH = {
+  loa_warn: 140, loa_crit: 150, la_warn: 140, la_crit: 150,
+  man_warn: 70, man_crit: 90,
+  pote_warn: 4.0, pote_crit: 3.0,
+  cons_warn: 5, cons_crit: 10
+};
+const ORDER = ['GA-203A','GAT-203B','GAT-203C','GA-203D','GA-203E','GA-203F','GAT-203G','GA-203S'];
+const EQ_COLORS = {
+  'GA-203A': '#c47f2a', 'GAT-203B': '#7a8c5a', 'GAT-203C': '#e07a3a',
+  'GA-203D': '#9b7db5', 'GA-203E': '#6b3e1f', 'GA-203F': '#3a7a8c',
+  'GAT-203G': '#8c3a6b', 'GA-203S': '#2a6b3e'
+};
+const ST = {
+  ok:   { c: '#16A34A', t: 'Normal' },
+  warn: { c: '#F97316', t: 'Atenção' },
+  crit: { c: '#DC2626', t: 'Crítico' },
+  stby: { c: '#2563EB', t: 'Stand-by' },
+  mnt:  { c: '#6B7280', t: 'Manutenção' }
+};
+
+// ============================================================
+// PARSER (cópia fiel do index.html)
+// ============================================================
+function sf(v) {
+  if (v === null || v === undefined) return null;
+  let s = String(v).trim();
+  if (s === '' || s === '-' || /^-+$/.test(s)) return null;
+  s = s.replace(',', '.');
+  const f = parseFloat(s);
+  return isNaN(f) || f <= 0 ? null : f;
+}
+function sfText(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  if (s === '' || s === '-' || /^-+$/.test(s)) return null;
+  return s;
+}
+function _norm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+function findObsColIndex(raw) {
+  for (const row of raw) { if (!row) continue;
+    for (let i = 0; i < row.length; i++) { const c = row[i]; if (typeof c === 'string' && /observ/.test(_norm(c))) return i; } }
+  return -1;
+}
+function fmtDate(v) {
+  if (!v) return null;
+  if (v instanceof Date && !isNaN(v)) return v.toISOString().slice(0, 10);
+  if (typeof v === 'number' && v > 40000 && v < 60000) return new Date(Date.UTC(1899, 11, 30) + v * 86400000).toISOString().slice(0, 10);
+  if (typeof v === 'string') {
+    const m = v.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+    if (m) { let dd = +m[1], mm = +m[2], yy = +m[3]; if (yy < 100) yy += 2000;
+      if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) { const d = new Date(Date.UTC(yy, mm - 1, dd)); if (!isNaN(d)) return d.toISOString().slice(0, 10); } }
+  }
+  return null;
+}
+function buildDataFromRows(raw) {
+  const out = {}; let cur = null, rows = [];
+  const obsCol = findObsColIndex(raw);
+  raw.forEach(row => {
+    if (!row || !row.length) return;
+    const c0 = row[0];
+    if (c0 && typeof c0 === 'string' && /^GA[T]?-203/.test(c0.trim())) {
+      if (cur && rows.length) out[cur] = rows; cur = c0.trim(); rows = [];
+    } else if (cur && c0) {
+      const d = fmtDate(c0);
+      if (d) {
+        const st = String(row[13] || '').toLowerCase();
+        const estado = (st.includes('stand') || st.includes('stb')) ? 'stand-by'
+          : (st.includes('manu') || st.includes('mnt')) ? 'manutenção' : 'operação';
+        rows.push({ data: d, pressao_succao: sf(row[1]), pressao_descarga: sf(row[2]),
+          nivel_selo_la: sfText(row[3]), nivel_selo_loa: sfText(row[4]),
+          repo_fluido_la: sf(row[5]), repo_fluido_loa: sf(row[6]),
+          pressao_pote_la: sf(row[7]), pressao_pote_loa: sf(row[8]),
+          temp_selo_la: sf(row[9]), temp_selo_loa: sf(row[10]),
+          temp_mancal_la: sf(row[11]), temp_mancal_loa: sf(row[12]),
+          estado, observacao: obsCol >= 0 ? sfText(row[obsCol]) : null });
+      }
+    }
+  });
+  if (cur && rows.length) out[cur] = rows;
+  return out;
+}
+function parseCSVText(text) {
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) { const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true; else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\r') {} else if (c === '\n') { row.push(f); rows.push(row); row = []; f = ''; } else f += c; }
+  if (f.length || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+function validData(d) { return d && Object.keys(d).length > 0 && Object.values(d).some(r => r.length); }
+
+// ============================================================
+// CARREGAMENTO: Google Sheets → GitHub .xlsx → dados embutidos no index.html
+// ============================================================
+let DATA = null, SOURCE = '', LOADED_AT = null;
+
+async function fromGoogle() {
+  const r = await fetch(GOOGLE_SHEETS_CSV_URL + '&t=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return buildDataFromRows(parseCSVText(await r.text()));
+}
+async function fromGitHub() {
+  for (const u of GITHUB_XLSX_URLS) {
+    try {
+      const r = await fetch(u + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) continue;
+      const wb = XLSX.read(await r.arrayBuffer(), { type: 'array', cellDates: true });
+      let name = wb.SheetNames[0];
+      for (const n of wb.SheetNames) { const ref = wb.Sheets[n]['!ref']; if (ref && XLSX.utils.decode_range(ref).e.r > 5) { name = n; break; } }
+      const d = buildDataFromRows(XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: null, raw: true }));
+      if (validData(d)) return d;
+    } catch (e) {}
+  }
+  throw new Error('GitHub indisponível');
+}
+async function fromEmbedded() {
+  const r = await fetch('index.html?t=' + Date.now(), { cache: 'no-store' });
+  const html = await r.text();
+  const m = html.match(/let DATA = (\{.*?\});\s*\n/s);
+  if (!m) throw new Error('DATA não encontrado');
+  return JSON.parse(m[1]);
+}
+
+async function loadData(manual) {
+  const sources = [['Google Sheets', fromGoogle], ['GitHub (.xlsx)', fromGitHub], ['dados embutidos no dashboard', fromEmbedded]];
+  setSync('⟳ buscando planilha…');
+  for (const [name, fn] of sources) {
+    try {
+      const d = await fn();
+      if (validData(d)) {
+        DATA = d; SOURCE = name; LOADED_AT = new Date();
+        build();
+        return;
+      }
+    } catch (e) { console.warn('Fonte falhou:', name, e); }
+  }
+  setSync('⚠ não foi possível carregar dados');
+  if (!DATA) document.getElementById('loading').textContent = 'Não foi possível carregar a planilha. Verifique a conexão e pressione R.';
+}
+
+// ============================================================
+// CÁLCULOS (mesma lógica do dashboard)
+// ============================================================
+const EQS = () => ORDER.filter(e => DATA[e]).concat(Object.keys(DATA).filter(e => !ORDER.includes(e) && !/primeiros_dias/.test(e)));
+const rowsOf = eq => (DATA[eq] || []).slice().sort((a, b) => a.data.localeCompare(b.data));
+const lastWith = (rows, f) => { for (let i = rows.length - 1; i >= 0; i--) if (rows[i][f] != null) return rows[i]; return null; };
+
+function healthScore(eq) {
+  const d = rowsOf(eq);
+  if (!d.length) return 0;
+  let last = null;
+  for (let i = d.length - 1; i >= 0; i--) if (d[i].temp_selo_loa != null || d[i].temp_selo_la != null) { last = d[i]; break; }
+  const estado = d[d.length - 1].estado;
+  if (estado === 'manutenção') return 40;
+  if (estado === 'stand-by' && !last) return 60;
+  if (!last) return 50;
+  let p = 0;
+  const pen = (v, w, c) => { if (v == null) return; if (v >= c) p += 40; else if (v >= w) p += 20; };
+  const penLow = (v, w, c) => { if (v == null) return; if (v <= c) p += 40; else if (v <= w) p += 20; };
+  const recent = d.filter(r => r.temp_selo_loa != null).slice(-3);
+  if (recent.length >= 2) { const t = recent[recent.length - 1].temp_selo_loa - recent[0].temp_selo_loa; if (t > 10) p += 15; else if (t > 5) p += 7; }
+  pen(last.temp_selo_loa, TH.loa_warn, TH.loa_crit); pen(last.temp_selo_la, TH.la_warn, TH.la_crit);
+  pen(last.temp_mancal_la, TH.man_warn, TH.man_crit); pen(last.temp_mancal_loa, TH.man_warn, TH.man_crit);
+  penLow(last.pressao_pote_la, TH.pote_warn, TH.pote_crit); penLow(last.pressao_pote_loa, TH.pote_warn, TH.pote_crit);
+  const u = d[d.length - 1];
+  pen(u.repo_fluido_la, TH.cons_warn, TH.cons_crit); pen(u.repo_fluido_loa, TH.cons_warn, TH.cons_crit);
+  return Math.max(0, Math.min(100, 100 - p));
+}
+
+function info(eq) {
+  const rows = rowsOf(eq);
+  const lastRow = rows[rows.length - 1] || {};
+  const score = healthScore(eq);
+  let key;
+  if (lastRow.estado === 'manutenção') key = 'mnt';
+  else if (lastRow.estado === 'stand-by') key = 'stby';
+  else key = score >= 80 ? 'ok' : score >= 50 ? 'warn' : 'crit';
+
+  // Motivos (mesmos critérios do semáforo do dashboard)
+  const motivos = [];
+  const last = [...rows].reverse().find(r => r.temp_selo_loa || r.temp_selo_la);
+  if (last && lastRow.estado !== 'manutenção') {
+    const chk = (v, w, c, l) => { if (v == null) return; if (v >= c) motivos.push({ lvl: 2, t: `${l} ${fmt(v)} °C ≥ ${c} °C` }); else if (v >= w) motivos.push({ lvl: 1, t: `${l} ${fmt(v)} °C ≥ ${w} °C` }); };
+    const low = (v, w, c, l) => { if (v == null) return; if (v <= c) motivos.push({ lvl: 2, t: `${l} ${fmt(v)} kgf ≤ ${c}` }); else if (v <= w) motivos.push({ lvl: 1, t: `${l} ${fmt(v)} kgf ≤ ${w}` }); };
+    chk(last.temp_selo_loa, TH.loa_warn, TH.loa_crit, 'Temp. selo LOA');
+    chk(last.temp_selo_la, TH.la_warn, TH.la_crit, 'Temp. selo LA');
+    chk(last.temp_mancal_la, TH.man_warn, TH.man_crit, 'Temp. mancal LA');
+    chk(last.temp_mancal_loa, TH.man_warn, TH.man_crit, 'Temp. mancal LOA');
+    low(last.pressao_pote_la, TH.pote_warn, TH.pote_crit, 'Pressão pote LA');
+    low(last.pressao_pote_loa, TH.pote_warn, TH.pote_crit, 'Pressão pote LOA');
+    const rc = rows.filter(r => r.temp_selo_loa != null).slice(-3);
+    if (rc.length >= 2) { const t = rc[rc.length - 1].temp_selo_loa - rc[0].temp_selo_loa; if (t > 5) motivos.push({ lvl: t > 10 ? 2 : 1, t: `Tendência de alta selo LOA: +${fmt(t)} °C nas últimas leituras` }); }
+    [['repo_fluido_la', 'LA'], ['repo_fluido_loa', 'LOA']].forEach(([f, l]) => { const v = lastRow[f];
+      if (v != null && v >= TH.cons_warn) motivos.push({ lvl: v >= TH.cons_crit ? 2 : 1, t: `Reposição de fluido ${l}: ${fmt(v)} L na última leitura` }); });
+  }
+  if (lastRow.estado === 'manutenção') motivos.push({ lvl: 1, t: 'Equipamento em manutenção' });
+  const obsRow = lastWith(rows, 'observacao');
+  return { eq, rows, lastRow, last, score, key, st: ST[key], motivos, obs: obsRow ? { d: obsRow.data, t: obsRow.observacao } : null };
+}
+
+// Períodos de comparação: últimos 30 dias x 30 dias anteriores (ancorado na leitura mais recente)
+function periods() {
+  let max = '';
+  EQS().forEach(e => rowsOf(e).forEach(r => { if (r.data > max) max = r.data; }));
+  const end = new Date(max + 'T00:00:00Z');
+  const s1 = new Date(end); s1.setUTCDate(s1.getUTCDate() - 29);
+  const e0 = new Date(s1); e0.setUTCDate(e0.getUTCDate() - 1);
+  const s0 = new Date(e0); s0.setUTCDate(s0.getUTCDate() - 29);
+  const iso = d => d.toISOString().slice(0, 10);
+  return { max, cur: [iso(s1), max], prev: [iso(s0), iso(e0)] };
+}
+const inRange = (rows, [a, b]) => rows.filter(r => r.data >= a && r.data <= b);
+const vals = (rows, f) => rows.map(r => r[f]).filter(v => v != null);
+const avg = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : null;
+const sum = a => a.reduce((s, v) => s + v, 0);
+
+// ============================================================
+// FORMATAÇÃO
+// ============================================================
+const fmt = (v, dec = 1) => v == null ? '—' : Number(v).toLocaleString('pt-BR', { maximumFractionDigits: dec, minimumFractionDigits: 0 });
+const fdate = iso => iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4) : '—';
+const fdateShort = iso => iso.slice(8, 10) + '/' + iso.slice(5, 7);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pill = st => `<span class="pill" style="background:${st.c}">${st.t}</span>`;
+function delta(cur, prev, higherIsBad = true, unit = '') {
+  if (cur == null || prev == null) return '';
+  const d = cur - prev;
+  if (Math.abs(d) < 0.05) return `<span class="delta flat">= </span>`;
+  const cls = d > 0 ? (higherIsBad ? 'up' : 'up good') : (higherIsBad ? 'down' : 'down bad');
+  return `<span class="delta ${cls}">${d > 0 ? '▲' : '▼'} ${fmt(Math.abs(d))}${unit}</span>`;
+}
+
+// ============================================================
+// SLIDES
+// ============================================================
+let MODE = (new URLSearchParams(location.search).get('modo') || 'gerencial').toLowerCase().startsWith('t') ? 'tecnico' : 'gerencial';
+let IDX = 0, CHARTS = [], CHART_JOBS = [];
+
+function foot(n, total) {
+  return `<div class="slide-foot"><span>GAs-203 · Monitoramento de bombas · ${MODE === 'tecnico' ? 'Visão técnica' : 'Visão gerencial'}</span>
+    <span>Dados: ${esc(SOURCE)} · última leitura ${fdate(periods().max)} · ${n}/${total}</span></div>`;
+}
+function head(kicker, title, right = '') {
+  return `<div class="slide-head"><div><div class="kicker">${kicker}</div><h2>${title}</h2></div>${right}</div>`;
+}
+
+function sCover(all) {
+  const p = periods();
+  const now = LOADED_AT.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return `<section class="slide cover">
+    <div><span class="mode-pill">${MODE === 'tecnico' ? 'Visão técnica' : 'Visão gerencial'}</span></div>
+    <h1>GAs-203<br>Status dos equipamentos</h1>
+    <div class="sub">Monitoramento de selagem e condição das bombas · ${all.length} equipamentos</div>
+    <div class="meta">
+      <div>Última leitura<b>${fdate(p.max)}</b></div>
+      <div>Período analisado<b>${fdateShort(p.cur[0])} a ${fdateShort(p.cur[1])}</b></div>
+      <div>Dados carregados<b>${now}</b></div>
+    </div>
+  </section>`;
+}
+
+function sSummary(all) {
+  const cnt = k => all.filter(i => i.key === k).length;
+  const op = all.filter(i => i.lastRow.estado === 'operação');
+  const avgHs = Math.round(avg(op.map(i => i.score)) || 0);
+  const crit = cnt('crit'), warn = cnt('warn'), ok = cnt('ok');
+  const hsCol = avgHs >= 80 ? ST.ok.c : avgHs >= 50 ? ST.warn.c : ST.crit.c;
+  let msg;
+  if (crit) msg = `<b>${crit} equipamento${crit > 1 ? 's' : ''} em condição crítica</b> exige${crit > 1 ? 'm' : ''} ação imediata`;
+  else if (warn) msg = `Nenhum equipamento crítico. <b>${warn} em atenção</b> para acompanhamento`;
+  else msg = `<b>Todos os equipamentos em operação estão dentro dos limites</b>`;
+  msg += ` · ${ok} de ${op.length} em operação estão normais.`;
+  const tiles = all.map(i => `<div class="card eq-tile" style="border-left-color:${i.st.c}">
+      <div class="n">${i.eq}</div><div class="s" style="color:${i.st.c}">${i.st.t}</div>
+      <div class="hs">Health Score ${i.score}</div></div>`).join('');
+  return `<section class="slide">
+    ${head('Resumo executivo', 'Situação geral da unidade')}
+    <div style="display:flex;flex-direction:column;gap:30px;flex:1">
+      <div class="headline">${msg}</div>
+      <div class="kpis">
+        <div class="card kpi"><div class="lbl">Em operação</div><div class="val">${op.length}<small> / ${all.length}</small></div><div class="note">${cnt('stby')} stand-by · ${cnt('mnt')} manutenção</div></div>
+        <div class="card kpi"><div class="lbl">Health Score médio</div><div class="val" style="color:${hsCol}">${avgHs}<small> / 100</small></div><div class="note">equipamentos em operação</div></div>
+        <div class="card kpi"><div class="lbl">Críticos</div><div class="val" style="color:${crit ? ST.crit.c : 'var(--text3)'}">${crit}</div><div class="note">Health Score &lt; 50</div></div>
+        <div class="card kpi"><div class="lbl">Em atenção</div><div class="val" style="color:${warn ? ST.warn.c : 'var(--text3)'}">${warn}</div><div class="note">Health Score 50–79</div></div>
+      </div>
+      <div class="status-grid">${tiles}</div>
+    </div>
+  </section>`;
+}
+
+function sRanking(all) {
+  const r = all.slice().sort((a, b) => a.score - b.score);
+  const rows = r.map(i => `<div class="rank-row">
+      <div class="n">${i.eq}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${i.score}%;background:${i.st.c}"></div></div>
+      <div class="sc" style="color:${i.st.c}">${i.score}</div>
+      <div>${pill(i.st)}</div></div>`).join('');
+  return `<section class="slide">
+    ${head('Health Score', 'Ranking de condição', `<div class="muted" style="font-size:19px;text-align:right">0–100 · menor = pior<br>ordenado do mais crítico</div>`)}
+    <div class="card" style="flex:1;display:flex;flex-direction:column;justify-content:center">${rows}</div>
+  </section>`;
+}
+
+function sAttention(all) {
+  const list = all.filter(i => i.key === 'crit' || i.key === 'warn' || i.key === 'mnt' || i.motivos.length)
+    .sort((a, b) => a.score - b.score).slice(0, 6);
+  const cards = list.map(i => {
+    const mot = i.motivos.slice().sort((a, b) => b.lvl - a.lvl).slice(0, 3)
+      .map(m => `<li style="color:${m.lvl === 2 ? ST.crit.c : 'inherit'}">${esc(m.t)}</li>`).join('');
+    const obs = i.obs ? `<div class="obs">“${esc(i.obs.t.length > 160 ? i.obs.t.slice(0, 157) + '…' : i.obs.t)}” <span style="font-style:normal">(${fdateShort(i.obs.d)})</span></div>` : '';
+    return `<div class="card" style="border-left-color:${i.st.c}"><h3>${i.eq} ${pill(i.st)}</h3>${mot ? `<ul>${mot}</ul>` : ''}${obs}</div>`;
+  }).join('');
+  return `<section class="slide">
+    ${head('Pontos de atenção', 'O que exige acompanhamento')}
+    <div class="body">${list.length ? `<div class="attn">${cards}</div>` : `<div class="empty">✓ Nenhum ponto de atenção no momento</div>`}</div>
+  </section>`;
+}
+
+function sConsumo(all) {
+  const p = periods();
+  const data = all.map(i => {
+    const c = inRange(i.rows, p.cur), pv = inRange(i.rows, p.prev);
+    return { eq: i.eq, la: sum(vals(c, 'repo_fluido_la')), loa: sum(vals(c, 'repo_fluido_loa')),
+             prev: sum(vals(pv, 'repo_fluido_la')) + sum(vals(pv, 'repo_fluido_loa')) };
+  });
+  const tot = sum(data.map(d => d.la + d.loa)), totPrev = sum(data.map(d => d.prev));
+  const pct = totPrev ? ((tot - totPrev) / totPrev) * 100 : null;
+  const top = data.slice().sort((a, b) => (b.la + b.loa) - (a.la + a.loa))[0];
+  const id = 'ch-consumo';
+  CHART_JOBS.push(() => new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: { labels: data.map(d => d.eq), datasets: [
+      { label: 'Lado acoplado (LA)', data: data.map(d => d.la), backgroundColor: '#c47f2a', borderRadius: 6, stack: 's' },
+      { label: 'Lado oposto (LOA)', data: data.map(d => d.loa), backgroundColor: '#6b3e1f', borderRadius: 6, stack: 's' }] },
+    options: baseOpts({ y: { title: 'Litros repostos (30 dias)' }, stacked: true })
+  }));
+  return `<section class="slide">
+    ${head('Fluido de selagem', 'Reposição nos últimos 30 dias')}
+    <div class="body">
+      <div class="card chart-box" style="padding:24px"><canvas id="${id}"></canvas></div>
+      <div style="width:400px;display:flex;flex-direction:column;gap:22px">
+        <div class="card kpi"><div class="lbl">Total reposto</div><div class="val">${fmt(tot)}<small> L</small></div>
+          <div class="note">${fdateShort(p.cur[0])} a ${fdateShort(p.cur[1])}</div></div>
+        <div class="card kpi"><div class="lbl">vs. 30 dias anteriores</div>
+          <div class="val" style="font-size:56px;color:${pct == null ? 'var(--text3)' : pct > 0 ? ST.crit.c : ST.ok.c}">${pct == null ? '—' : (pct > 0 ? '+' : '') + fmt(pct, 0) + '%'}</div>
+          <div class="note">${fmt(totPrev)} L no período anterior</div></div>
+        <div class="card kpi"><div class="lbl">Maior consumo</div><div class="val" style="font-size:44px">${top && (top.la + top.loa) > 0 ? top.eq : '—'}</div>
+          <div class="note">${top ? fmt(top.la + top.loa) + ' L no período' : ''}</div></div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function sTrend(all) {
+  const p = periods();
+  const from = (() => { const d = new Date(p.max + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 59); return d.toISOString().slice(0, 10); })();
+  const labels = [...new Set(all.flatMap(i => i.rows.filter(r => r.data >= from).map(r => r.data)))].sort();
+  const ds = all.filter(i => i.rows.some(r => r.data >= from && r.temp_selo_loa != null)).map(i => {
+    const m = {}; i.rows.forEach(r => { if (r.data >= from) m[r.data] = r.temp_selo_loa; });
+    return { label: i.eq, data: labels.map(l => m[l] ?? null), borderColor: EQ_COLORS[i.eq] || '#888', backgroundColor: EQ_COLORS[i.eq] || '#888',
+      borderWidth: 3, pointRadius: 2, tension: .3, spanGaps: true };
+  });
+  ds.push(limitLine('Limite atenção', TH.loa_warn, labels.length, ST.warn.c));
+  ds.push(limitLine('Limite crítico', TH.loa_crit, labels.length, ST.crit.c));
+  const id = 'ch-trend';
+  CHART_JOBS.push(() => new Chart(document.getElementById(id), { type: 'line', data: { labels: labels.map(fdateShort), datasets: ds },
+    options: baseOpts({ y: { title: 'Temperatura selo LOA (°C)' } }) }));
+  return `<section class="slide">
+    ${head('Tendência · 60 dias', 'Temperatura do selo LOA por equipamento')}
+    <div class="card chart-box" style="padding:24px"><canvas id="${id}"></canvas></div>
+  </section>`;
+}
+
+function sCompare(all) {
+  const p = periods();
+  const rows = all.map(i => {
+    const c = inRange(i.rows, p.cur), v = inRange(i.rows, p.prev);
+    const cell = (cur, prev, hib, unit, dec = 1) => `<td class="num">${fmt(cur, dec)}${delta(cur, prev, hib, unit)}</td>`;
+    const mxC = Math.max(...vals(c, 'temp_mancal_la'), ...vals(c, 'temp_mancal_loa'));
+    const mxP = Math.max(...vals(v, 'temp_mancal_la'), ...vals(v, 'temp_mancal_loa'));
+    const mnC = Math.min(...vals(c, 'pressao_pote_la'), ...vals(c, 'pressao_pote_loa'));
+    const mnP = Math.min(...vals(v, 'pressao_pote_la'), ...vals(v, 'pressao_pote_loa'));
+    const fin = x => isFinite(x) ? x : null;
+    const repC = sum(vals(c, 'repo_fluido_la')) + sum(vals(c, 'repo_fluido_loa'));
+    const repP = sum(vals(v, 'repo_fluido_la')) + sum(vals(v, 'repo_fluido_loa'));
+    return `<tr><td><span class="dot" style="background:${i.st.c};margin-right:10px"></span><b>${i.eq}</b></td>
+      ${cell(avg(vals(c, 'temp_selo_la')), avg(vals(v, 'temp_selo_la')), true, '')}
+      ${cell(avg(vals(c, 'temp_selo_loa')), avg(vals(v, 'temp_selo_loa')), true, '')}
+      ${cell(fin(mxC), fin(mxP), true, '')}
+      ${cell(fin(mnC), fin(mnP), false, '')}
+      ${cell(repC, repP, true, '')}
+      <td class="num">${c.length}</td></tr>`;
+  }).join('');
+  return `<section class="slide">
+    ${head('Comparativo de períodos', 'Últimos 30 dias × 30 dias anteriores',
+      `<div class="muted" style="font-size:18px;text-align:right">Atual: ${fdateShort(p.cur[0])}–${fdateShort(p.cur[1])}<br>Anterior: ${fdateShort(p.prev[0])}–${fdateShort(p.prev[1])}</div>`)}
+    <div class="card" style="flex:1;padding:20px 28px">
+      <table><thead><tr><th>Equipamento</th><th class="num">Selo LA méd. °C</th><th class="num">Selo LOA méd. °C</th>
+        <th class="num">Mancal máx. °C</th><th class="num">Pote mín. kgf</th><th class="num">Reposição L</th><th class="num">Leituras</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+      <div class="muted" style="font-size:16px;margin-top:14px">▲▼ variação em relação ao período anterior · vermelho = piora, verde = melhora</div>
+    </div>
+  </section>`;
+}
+
+function sEquip(i) {
+  const p = periods();
+  const from = (() => { const d = new Date(p.max + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 44); return d.toISOString().slice(0, 10); })();
+  const r = i.rows.filter(x => x.data >= from);
+  const id = 'ch-eq-' + i.eq.replace(/\W/g, '');
+  const L = r.map(x => fdateShort(x.data));
+  const line = (label, f, color, dash) => ({ label, data: r.map(x => x[f]), borderColor: color, backgroundColor: color, borderWidth: 3, pointRadius: 2, tension: .3, spanGaps: true, borderDash: dash || [] });
+  CHART_JOBS.push(() => new Chart(document.getElementById(id), { type: 'line', data: { labels: L, datasets: [
+    line('Selo LA', 'temp_selo_la', '#c47f2a'), line('Selo LOA', 'temp_selo_loa', '#6b3e1f'),
+    line('Mancal LA', 'temp_mancal_la', '#7a8c5a', [2, 3]), line('Mancal LOA', 'temp_mancal_loa', '#3a7a8c', [2, 3]),
+    limitLine('Limite selo (atenção)', TH.loa_warn, L.length, ST.warn.c)] },
+    options: baseOpts({ y: { title: 'Temperatura (°C)' } }) }));
+
+  const l = i.last || {}, u = i.lastRow;
+  const cur = inRange(i.rows, p.cur);
+  const tcls = (v, w, c, low) => v == null ? '' : low ? (v <= c ? ST.crit.c : v <= w ? ST.warn.c : '') : (v >= c ? ST.crit.c : v >= w ? ST.warn.c : '');
+  const tr = (lbl, la, loa, unit, w, c, low) => `<tr><td>${lbl}</td>
+    <td class="num" style="color:${tcls(la, w, c, low)};font-weight:${tcls(la, w, c, low) ? 700 : 400}">${typeof la === 'string' ? esc(la) : fmt(la)}</td>
+    <td class="num" style="color:${tcls(loa, w, c, low)};font-weight:${tcls(loa, w, c, low) ? 700 : 400}">${typeof loa === 'string' ? esc(loa) : fmt(loa)}</td>
+    <td class="num muted">${unit}</td></tr>`;
+  const mot = i.motivos.slice().sort((a, b) => b.lvl - a.lvl).slice(0, 3).map(m => `<li style="color:${m.lvl === 2 ? ST.crit.c : 'inherit'}">${esc(m.t)}</li>`).join('');
+  return `<section class="slide">
+    ${head('Equipamento · ' + (u.estado || ''), i.eq,
+      `<div style="display:flex;align-items:center;gap:22px">${pill(i.st)}<div style="text-align:right"><div class="big-score" style="color:${i.st.c}">${i.score}</div><div class="muted" style="font-size:16px">Health Score</div></div></div>`)}
+    <div class="body">
+      <div class="card chart-box" style="padding:20px"><canvas id="${id}"></canvas></div>
+      <div class="eq-side">
+        <div class="card" style="padding:16px 22px">
+          <table><thead><tr><th>Medição <span style="text-transform:none;letter-spacing:0">(${fdateShort(l.data || u.data)})</span></th><th class="num">LA</th><th class="num">LOA</th><th class="num"></th></tr></thead><tbody>
+            ${tr('Temp. selo', l.temp_selo_la, l.temp_selo_loa, '°C', TH.la_warn, TH.la_crit)}
+            ${tr('Temp. mancal', l.temp_mancal_la, l.temp_mancal_loa, '°C', TH.man_warn, TH.man_crit)}
+            ${tr('Pressão pote', l.pressao_pote_la, l.pressao_pote_loa, 'kgf', TH.pote_warn, TH.pote_crit, true)}
+            ${tr('Nível selo', l.nivel_selo_la || '—', l.nivel_selo_loa || '—', '')}
+            ${tr('Reposição 30 d', sum(vals(cur, 'repo_fluido_la')), sum(vals(cur, 'repo_fluido_loa')), 'L')}
+            <tr><td>Sucção / descarga</td><td class="num">${fmt(l.pressao_succao)}</td><td class="num">${fmt(l.pressao_descarga)}</td><td class="num muted">kgf</td></tr>
+          </tbody></table>
+        </div>
+        <div class="card" style="padding:16px 22px;flex:1;font-size:17px;overflow:hidden">
+          ${mot ? `<div style="font-weight:600;margin-bottom:6px">Alertas</div><ul style="margin-left:20px;line-height:1.45">${mot}</ul>` : `<div style="color:${ST.ok.c};font-weight:600">✓ Sem alertas nos limites configurados</div>`}
+          ${i.obs ? `<div style="font-weight:600;margin:10px 0 4px">Observação (${fdateShort(i.obs.d)})</div><div class="muted" style="font-style:italic">${esc(i.obs.t.length > 220 ? i.obs.t.slice(0, 217) + '…' : i.obs.t)}</div>` : ''}
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function sCriteria() {
+  const row = (a, b, c) => `<tr><td>${a}</td><td class="num" style="color:${ST.warn.c}">${b}</td><td class="num" style="color:${ST.crit.c}">${c}</td></tr>`;
+  return `<section class="slide">
+    ${head('Referência', 'Critérios do Health Score')}
+    <div class="body">
+      <div class="card" style="flex:1;align-self:flex-start">
+        <table><thead><tr><th>Parâmetro</th><th class="num">Atenção (−20)</th><th class="num">Crítico (−40)</th></tr></thead><tbody>
+          ${row('Temperatura do selo LA / LOA', '≥ ' + TH.la_warn + ' °C', '≥ ' + TH.la_crit + ' °C')}
+          ${row('Temperatura do mancal LA / LOA', '≥ ' + TH.man_warn + ' °C', '≥ ' + TH.man_crit + ' °C')}
+          ${row('Pressão do pote LA / LOA', '≤ ' + fmt(TH.pote_warn) + ' kgf', '≤ ' + fmt(TH.pote_crit) + ' kgf')}
+          ${row('Reposição de fluido (última leitura)', '≥ ' + TH.cons_warn + ' L', '≥ ' + TH.cons_crit + ' L')}
+          ${row('Tendência selo LOA (3 leituras)', '> +5 °C (−7)', '> +10 °C (−15)')}
+        </tbody></table>
+      </div>
+      <div style="width:480px;display:flex;flex-direction:column;gap:14px">
+        ${[['ok', '80–100'], ['warn', '50–79'], ['crit', '0–49'], ['stby', 'equipamento parado'], ['mnt', 'em intervenção']].map(([k, t]) =>
+          `<div class="card" style="padding:16px 22px;display:flex;align-items:center;gap:16px;font-size:20px"><span class="dot" style="background:${ST[k].c};width:22px;height:22px"></span><b>${ST[k].t}</b><span class="muted">${t}</span></div>`).join('')}
+        <div class="muted" style="font-size:16px">Score = 100 − penalidades. Limites padrão do dashboard.</div>
+      </div>
+    </div>
+  </section>`;
+}
+
+// ---------- Chart helpers ----------
+function limitLine(label, v, n, color) {
+  return { label, data: Array(n).fill(v), borderColor: color, borderWidth: 2, borderDash: [8, 6], pointRadius: 0, fill: false };
+}
+function baseOpts({ y, stacked }) {
+  return {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 16, family: 'DM Sans' }, color: '#2a1f14', boxWidth: 18, padding: 18 } },
+      tooltip: { titleFont: { size: 15 }, bodyFont: { size: 15 } } },
+    scales: {
+      x: { stacked: !!stacked, ticks: { font: { size: 15 }, color: '#6b5c4a', maxRotation: 0, autoSkipPadding: 14 }, grid: { display: false } },
+      y: { stacked: !!stacked, ticks: { font: { size: 15 }, color: '#6b5c4a' }, grid: { color: '#ece4d8' },
+           title: { display: !!y.title, text: y.title, font: { size: 16 }, color: '#6b5c4a' } }
+    }
+  };
+}
+
+// ============================================================
+// MONTAGEM / NAVEGAÇÃO
+// ============================================================
+function build() {
+  CHARTS.forEach(c => c.destroy()); CHARTS = []; CHART_JOBS = [];
+  const all = EQS().map(info);
+  const html = MODE === 'tecnico'
+    ? [sCover(all), sSummary(all), sRanking(all), sAttention(all), sTrend(all), sCompare(all), sConsumo(all), ...all.map(sEquip), sCriteria()]
+    : [sCover(all), sSummary(all), sRanking(all), sAttention(all), sConsumo(all)];
+  const deck = document.getElementById('deck');
+  deck.innerHTML = html.join('');
+  const slides = deck.querySelectorAll('.slide');
+  slides.forEach((s, n) => { if (n > 0) s.insertAdjacentHTML('beforeend', foot(n + 1, slides.length)); });
+  CHART_JOBS.forEach(j => { try { CHARTS.push(j()); } catch (e) { console.warn(e); } });
+  IDX = Math.min(IDX, slides.length - 1);
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('btn-ger').classList.toggle('on', MODE === 'gerencial');
+  document.getElementById('btn-tec').classList.toggle('on', MODE === 'tecnico');
+  setSync('✓ ' + SOURCE + ' · ' + LOADED_AT.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+  show();
+}
+function show() {
+  const slides = document.querySelectorAll('.slide');
+  slides.forEach((s, n) => s.classList.toggle('active', n === IDX));
+  document.getElementById('counter').textContent = (IDX + 1) + ' / ' + slides.length;
+  document.getElementById('progress').style.width = ((IDX + 1) / slides.length * 100) + '%';
+}
+function go(d) { const n = document.querySelectorAll('.slide').length; IDX = Math.max(0, Math.min(n - 1, IDX + d)); show(); }
+function setMode(m) {
+  if (m === MODE || !DATA) return;
+  MODE = m; IDX = 0;
+  const u = new URL(location.href); u.searchParams.set('modo', m); history.replaceState(null, '', u);
+  build();
+}
+function setSync(t) { document.getElementById('sync').textContent = t; }
+function toggleFS() { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); else document.exitFullscreen?.(); }
+function fit() {
+  const s = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+  document.getElementById('deck').style.transform = `scale(${s})`;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(k)) { e.preventDefault(); go(1); }
+  else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(k)) { e.preventDefault(); go(-1); }
+  else if (k === 'Home') { IDX = 0; show(); }
+  else if (k === 'End') { IDX = 999; go(0); }
+  else if (k === 'f' || k === 'F') toggleFS();
+  else if (k === 'm' || k === 'M') setMode(MODE === 'tecnico' ? 'gerencial' : 'tecnico');
+  else if (k === 'r' || k === 'R') loadData(true);
+  else if (k === 'p' || k === 'P') window.print();
+  poke();
+});
+// Swipe no celular/tablet
+let _tx = null;
+document.addEventListener('touchstart', e => { _tx = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => { if (_tx == null) return; const dx = e.changedTouches[0].clientX - _tx; if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1); _tx = null; poke(); });
+// Esconde a barra de controles após 3 s sem movimento
+let _hideT;
+function poke() { const c = document.getElementById('controls'); c.classList.remove('hidden'); clearTimeout(_hideT); _hideT = setTimeout(() => c.classList.add('hidden'), 3000); }
+document.addEventListener('mousemove', poke);
+
+window.addEventListener('resize', fit);
+fit(); poke();
+loadData();
+setInterval(() => { if (!document.hidden) loadData(); }, AUTO_REFRESH_MS);
+</script>
+</body>
+</html>
